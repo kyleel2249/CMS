@@ -1,0 +1,1979 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: CINTEXA NEXUS AI Business Operating System API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: dashboard
+    description: Executive dashboard and analytics
+  - name: contacts
+    description: CRM contacts
+  - name: companies
+    description: CRM companies
+  - name: leads
+    description: CRM leads
+  - name: deals
+    description: Sales pipeline deals
+  - name: tickets
+    description: Customer support tickets
+  - name: campaigns
+    description: Marketing campaigns
+  - name: invoices
+    description: Finance invoices
+  - name: projects
+    description: Project management
+  - name: tasks
+    description: Project tasks
+  - name: ai
+    description: AI assistant and agents
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  # ── Dashboard ──────────────────────────────────────────────────────────
+  /dashboard/stats:
+    get:
+      operationId: getDashboardStats
+      tags: [dashboard]
+      summary: Executive dashboard KPI summary
+      responses:
+        "200":
+          description: Dashboard statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /dashboard/activity:
+    get:
+      operationId: getDashboardActivity
+      tags: [dashboard]
+      summary: Recent cross-module activity feed
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer, default: 20 }
+      responses:
+        "200":
+          description: Activity items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+
+  /dashboard/revenue-chart:
+    get:
+      operationId: getRevenueChart
+      tags: [dashboard]
+      summary: Monthly revenue chart data
+      parameters:
+        - in: query
+          name: months
+          schema: { type: integer, default: 6 }
+      responses:
+        "200":
+          description: Revenue chart data points
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RevenueDataPoint"
+
+  # ── Contacts ───────────────────────────────────────────────────────────
+  /contacts:
+    get:
+      operationId: listContacts
+      tags: [contacts]
+      summary: List all contacts
+      parameters:
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 50 }
+        - in: query
+          name: offset
+          schema: { type: integer, default: 0 }
+      responses:
+        "200":
+          description: List of contacts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Contact"
+    post:
+      operationId: createContact
+      tags: [contacts]
+      summary: Create a contact
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContactInput"
+      responses:
+        "201":
+          description: Created contact
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contact"
+
+  /contacts/{id}:
+    get:
+      operationId: getContact
+      tags: [contacts]
+      summary: Get a contact by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Contact
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contact"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateContact
+      tags: [contacts]
+      summary: Update a contact
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ContactUpdate"
+      responses:
+        "200":
+          description: Updated contact
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contact"
+    delete:
+      operationId: deleteContact
+      tags: [contacts]
+      summary: Delete a contact
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Companies ──────────────────────────────────────────────────────────
+  /companies:
+    get:
+      operationId: listCompanies
+      tags: [companies]
+      summary: List all companies
+      parameters:
+        - in: query
+          name: search
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 50 }
+      responses:
+        "200":
+          description: List of companies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Company"
+    post:
+      operationId: createCompany
+      tags: [companies]
+      summary: Create a company
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompanyInput"
+      responses:
+        "201":
+          description: Created company
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Company"
+
+  /companies/{id}:
+    get:
+      operationId: getCompany
+      tags: [companies]
+      summary: Get a company by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Company
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Company"
+    patch:
+      operationId: updateCompany
+      tags: [companies]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CompanyUpdate"
+      responses:
+        "200":
+          description: Updated company
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Company"
+    delete:
+      operationId: deleteCompany
+      tags: [companies]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Leads ──────────────────────────────────────────────────────────────
+  /leads:
+    get:
+      operationId: listLeads
+      tags: [leads]
+      summary: List leads with optional filtering
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 50 }
+      responses:
+        "200":
+          description: List of leads
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Lead"
+    post:
+      operationId: createLead
+      tags: [leads]
+      summary: Create a lead
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LeadInput"
+      responses:
+        "201":
+          description: Created lead
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lead"
+
+  /leads/{id}/recalculate-score:
+    post:
+      operationId: recalculateLeadScore
+      tags: [leads]
+      summary: Recompute a single lead's score using the NEXUS scoring engine
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Updated lead
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lead"
+
+  /leads/recalculate-scores:
+    post:
+      operationId: recalculateAllLeadScores
+      tags: [leads]
+      summary: Recompute scores for every lead using the NEXUS scoring engine
+      responses:
+        "200":
+          description: Recalculation summary
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [total, updated]
+                properties:
+                  total: { type: integer }
+                  updated: { type: integer }
+
+  /leads/{id}:
+    patch:
+      operationId: updateLead
+      tags: [leads]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LeadUpdate"
+      responses:
+        "200":
+          description: Updated lead
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Lead"
+    delete:
+      operationId: deleteLead
+      tags: [leads]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Deals / Sales Pipeline ─────────────────────────────────────────────
+  /deals:
+    get:
+      operationId: listDeals
+      tags: [deals]
+      summary: List all deals
+      parameters:
+        - in: query
+          name: stage
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 50 }
+      responses:
+        "200":
+          description: List of deals
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Deal"
+    post:
+      operationId: createDeal
+      tags: [deals]
+      summary: Create a deal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DealInput"
+      responses:
+        "201":
+          description: Created deal
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Deal"
+
+  /deals/{id}:
+    patch:
+      operationId: updateDeal
+      tags: [deals]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DealUpdate"
+      responses:
+        "200":
+          description: Updated deal
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Deal"
+    delete:
+      operationId: deleteDeal
+      tags: [deals]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deleted
+
+  /deals/pipeline-summary:
+    get:
+      operationId: getPipelineSummary
+      tags: [deals]
+      summary: Deal count and value grouped by stage
+      responses:
+        "200":
+          description: Pipeline breakdown
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PipelineStage"
+
+  /deals/forecast:
+    get:
+      operationId: getDealsForecast
+      tags: [deals]
+      summary: Weighted revenue forecast, quota attainment, and stalled-deal detection
+      responses:
+        "200":
+          description: Forecast breakdown
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Forecast"
+
+  # ── Support Tickets ────────────────────────────────────────────────────
+  /tickets/sla-summary:
+    get:
+      operationId: getTicketsSlaSummary
+      tags: [tickets]
+      summary: Aggregate SLA breach/at-risk/on-track counts and average response/resolution times
+      responses:
+        "200":
+          description: SLA summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SlaSummary"
+
+  /tickets/suggest-assignee:
+    get:
+      operationId: suggestTicketAssignee
+      tags: [tickets]
+      summary: Suggest the least-loaded agent for auto-routing a new ticket
+      responses:
+        "200":
+          description: Suggested assignee and current agent loads
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuggestAssignee"
+
+  /tickets:
+    get:
+      operationId: listTickets
+      tags: [tickets]
+      summary: List support tickets
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string }
+        - in: query
+          name: priority
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 50 }
+      responses:
+        "200":
+          description: List of tickets
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Ticket"
+    post:
+      operationId: createTicket
+      tags: [tickets]
+      summary: Create a support ticket
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TicketInput"
+      responses:
+        "201":
+          description: Created ticket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ticket"
+
+  /tickets/{id}:
+    patch:
+      operationId: updateTicket
+      tags: [tickets]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TicketUpdate"
+      responses:
+        "200":
+          description: Updated ticket
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ticket"
+    delete:
+      operationId: deleteTicket
+      tags: [tickets]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Marketing Campaigns ────────────────────────────────────────────────
+  /campaigns/insights:
+    get:
+      operationId: getCampaignInsights
+      tags: [campaigns]
+      summary: Funnel benchmarks, top performer, and underperforming campaigns
+      responses:
+        "200":
+          description: Campaign insights report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CampaignInsightsReport"
+
+  /campaigns:
+    get:
+      operationId: listCampaigns
+      tags: [campaigns]
+      summary: List marketing campaigns
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 50 }
+      responses:
+        "200":
+          description: List of campaigns
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Campaign"
+    post:
+      operationId: createCampaign
+      tags: [campaigns]
+      summary: Create a campaign
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CampaignInput"
+      responses:
+        "201":
+          description: Created campaign
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Campaign"
+
+  /campaigns/{id}:
+    patch:
+      operationId: updateCampaign
+      tags: [campaigns]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CampaignUpdate"
+      responses:
+        "200":
+          description: Updated campaign
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Campaign"
+    delete:
+      operationId: deleteCampaign
+      tags: [campaigns]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Finance / Invoices ─────────────────────────────────────────────────
+  /invoices:
+    get:
+      operationId: listInvoices
+      tags: [invoices]
+      summary: List invoices
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 50 }
+      responses:
+        "200":
+          description: List of invoices
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Invoice"
+    post:
+      operationId: createInvoice
+      tags: [invoices]
+      summary: Create an invoice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvoiceInput"
+      responses:
+        "201":
+          description: Created invoice
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+
+  /invoices/{id}:
+    patch:
+      operationId: updateInvoice
+      tags: [invoices]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InvoiceUpdate"
+      responses:
+        "200":
+          description: Updated invoice
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+    delete:
+      operationId: deleteInvoice
+      tags: [invoices]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Projects ───────────────────────────────────────────────────────────
+  /projects:
+    get:
+      operationId: listProjects
+      tags: [projects]
+      summary: List projects
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 50 }
+      responses:
+        "200":
+          description: List of projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Project"
+    post:
+      operationId: createProject
+      tags: [projects]
+      summary: Create a project
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectInput"
+      responses:
+        "201":
+          description: Created project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+
+  /projects/{id}:
+    patch:
+      operationId: updateProject
+      tags: [projects]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectUpdate"
+      responses:
+        "200":
+          description: Updated project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+    delete:
+      operationId: deleteProject
+      tags: [projects]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deleted
+
+  # ── Tasks ──────────────────────────────────────────────────────────────
+  /tasks:
+    get:
+      operationId: listTasks
+      tags: [tasks]
+      summary: List tasks
+      parameters:
+        - in: query
+          name: projectId
+          schema: { type: integer }
+        - in: query
+          name: status
+          schema: { type: string }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 50 }
+      responses:
+        "200":
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Task"
+    post:
+      operationId: createTask
+      tags: [tasks]
+      summary: Create a task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskInput"
+      responses:
+        "201":
+          description: Created task
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+
+  /tasks/{id}:
+    patch:
+      operationId: updateTask
+      tags: [tasks]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaskUpdate"
+      responses:
+        "200":
+          description: Updated task
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Task"
+    delete:
+      operationId: deleteTask
+      tags: [tasks]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "204":
+          description: Deleted
+
+  # ── AI Assistant ───────────────────────────────────────────────────────
+  /ai/chat:
+    post:
+      operationId: aiChat
+      tags: [ai]
+      summary: Send a message to the AI business assistant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AiChatInput"
+      responses:
+        "200":
+          description: AI response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiReply"
+
+  /ai/morning-brief:
+    get:
+      operationId: getMorningBrief
+      tags: [ai]
+      summary: AI-generated executive morning briefing
+      responses:
+        "200":
+          description: Morning brief
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MorningBrief"
+
+  /ai/status:
+    get:
+      operationId: getAiStatus
+      tags: [ai]
+      summary: Whether the AI layer is fully activated (LLM key configured)
+      responses:
+        "200":
+          description: AI status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiStatus"
+
+  /ai/insights:
+    get:
+      operationId: listAiInsights
+      tags: [ai]
+      summary: List AI-generated work products across every module
+      parameters:
+        - in: query
+          name: module
+          schema: { type: string }
+        - in: query
+          name: kind
+          schema: { type: string }
+        - in: query
+          name: entityId
+          schema: { type: integer }
+        - in: query
+          name: limit
+          schema: { type: integer }
+      responses:
+        "200":
+          description: AI insights
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AiInsight"
+
+  /ai/leads/{id}/qualify:
+    post:
+      operationId: aiQualifyLead
+      tags: [ai]
+      summary: AI scores and qualifies a lead, drafting the next action
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Qualification insight
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiInsight"
+
+  /ai/tickets/{id}/triage:
+    post:
+      operationId: aiTriageTicket
+      tags: [ai]
+      summary: AI triages a ticket and drafts a first reply
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Triage insight
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiInsight"
+
+  /ai/campaigns/{id}/generate-copy:
+    post:
+      operationId: aiGenerateCampaignCopy
+      tags: [ai]
+      summary: AI drafts campaign copy
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GenerateCampaignCopyInput"
+      responses:
+        "200":
+          description: Copy draft insight
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiInsight"
+
+  /ai/finance/forecast:
+    post:
+      operationId: aiFinanceForecast
+      tags: [ai]
+      summary: AI-generated revenue forecast grounded in live finance/pipeline data
+      responses:
+        "200":
+          description: Finance forecast
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FinanceForecast"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required: [status]
+
+    # ── Dashboard ────────────────────────────────────────────────────────
+    DashboardStats:
+      type: object
+      required: [totalRevenue, totalContacts, totalDeals, openTickets, totalLeads, winRate, monthlyGrowth, activeProjects]
+      properties:
+        totalRevenue:
+          type: number
+        totalContacts:
+          type: integer
+        totalDeals:
+          type: integer
+        openTickets:
+          type: integer
+        totalLeads:
+          type: integer
+        winRate:
+          type: number
+        monthlyGrowth:
+          type: number
+        activeProjects:
+          type: integer
+
+    ActivityItem:
+      type: object
+      required: [id, type, title, description, createdAt]
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: [contact, deal, ticket, campaign, invoice, task, lead]
+        title:
+          type: string
+        description:
+          type: string
+        createdAt:
+          type: string
+
+    RevenueDataPoint:
+      type: object
+      required: [month, revenue, deals]
+      properties:
+        month:
+          type: string
+        revenue:
+          type: number
+        deals:
+          type: integer
+
+    PipelineStage:
+      type: object
+      required: [stage, count, value]
+      properties:
+        stage:
+          type: string
+        count:
+          type: integer
+        value:
+          type: number
+
+    # ── Contact ──────────────────────────────────────────────────────────
+    Contact:
+      type: object
+      required: [id, firstName, lastName, email, createdAt]
+      properties:
+        id:
+          type: integer
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: ["string", "null"]
+        company:
+          type: ["string", "null"]
+        jobTitle:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [active, inactive, prospect]
+        score:
+          type: ["integer", "null"]
+        createdAt:
+          type: string
+
+    ContactInput:
+      type: object
+      required: [firstName, lastName, email]
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        company:
+          type: string
+        jobTitle:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive, prospect]
+
+    ContactUpdate:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        company:
+          type: string
+        jobTitle:
+          type: string
+        status:
+          type: string
+          enum: [active, inactive, prospect]
+        score:
+          type: integer
+
+    # ── Company ──────────────────────────────────────────────────────────
+    Company:
+      type: object
+      required: [id, name, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        industry:
+          type: ["string", "null"]
+        website:
+          type: ["string", "null"]
+        size:
+          type: ["string", "null"]
+        revenue:
+          type: ["number", "null"]
+        country:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    CompanyInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        industry:
+          type: string
+        website:
+          type: string
+        size:
+          type: string
+        revenue:
+          type: number
+        country:
+          type: string
+
+    CompanyUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        industry:
+          type: string
+        website:
+          type: string
+        size:
+          type: string
+        revenue:
+          type: number
+        country:
+          type: string
+
+    # ── Lead ─────────────────────────────────────────────────────────────
+    Lead:
+      type: object
+      required: [id, name, email, source, status, score, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: ["string", "null"]
+        company:
+          type: ["string", "null"]
+        source:
+          type: string
+          enum: [website, referral, social, email, cold_call, event, other]
+        status:
+          type: string
+          enum: [new, contacted, qualified, unqualified, converted]
+        score:
+          type: integer
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        scoreBreakdown:
+          type: array
+          items:
+            type: object
+            required: [label, points]
+            properties:
+              label: { type: string }
+              points: { type: integer }
+        scoreBand:
+          type: string
+          enum: [hot, warm, cold, unqualified]
+        liveScore:
+          type: integer
+          description: The score the NEXUS scoring engine would assign right now, which may differ from `score` until recalculated.
+
+    LeadInput:
+      type: object
+      required: [name, email, source]
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        company:
+          type: string
+        source:
+          type: string
+          enum: [website, referral, social, email, cold_call, event, other]
+        status:
+          type: string
+          enum: [new, contacted, qualified, unqualified, converted]
+        score:
+          type: integer
+        notes:
+          type: string
+
+    LeadUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        phone:
+          type: string
+        company:
+          type: string
+        source:
+          type: string
+        status:
+          type: string
+          enum: [new, contacted, qualified, unqualified, converted]
+        score:
+          type: integer
+        notes:
+          type: string
+
+    # ── Deal ─────────────────────────────────────────────────────────────
+    Deal:
+      type: object
+      required: [id, title, value, stage, probability, contactName, createdAt]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        value:
+          type: number
+        stage:
+          type: string
+          enum: [prospecting, qualification, proposal, negotiation, closed_won, closed_lost]
+        probability:
+          type: integer
+        contactName:
+          type: string
+        companyName:
+          type: ["string", "null"]
+        expectedCloseDate:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    DealInput:
+      type: object
+      required: [title, value, stage, contactName]
+      properties:
+        title:
+          type: string
+        value:
+          type: number
+        stage:
+          type: string
+          enum: [prospecting, qualification, proposal, negotiation, closed_won, closed_lost]
+        probability:
+          type: integer
+        contactName:
+          type: string
+        companyName:
+          type: string
+        expectedCloseDate:
+          type: string
+        notes:
+          type: string
+
+    DealUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        value:
+          type: number
+        stage:
+          type: string
+          enum: [prospecting, qualification, proposal, negotiation, closed_won, closed_lost]
+        probability:
+          type: integer
+        contactName:
+          type: string
+        companyName:
+          type: string
+        expectedCloseDate:
+          type: string
+        notes:
+          type: string
+
+    Forecast:
+      type: object
+      required: [category, quota, monthlyTrend, stalledDeals, dealCount]
+      properties:
+        category:
+          type: object
+          required: [pipeline, weightedPipeline, bestCase, commit, closedWon]
+          properties:
+            pipeline: { type: number }
+            weightedPipeline: { type: number }
+            bestCase: { type: number }
+            commit: { type: number }
+            closedWon: { type: number }
+        quota:
+          type: object
+          required: [target, attained, attainmentPct, source]
+          properties:
+            target: { type: number }
+            attained: { type: number }
+            attainmentPct: { type: number }
+            source:
+              type: string
+              enum: [linked_okr, default]
+        monthlyTrend:
+          type: array
+          items:
+            type: object
+            required: [month, closedValue, dealsClosed]
+            properties:
+              month: { type: string }
+              closedValue: { type: number }
+              dealsClosed: { type: integer }
+        stalledDeals:
+          type: array
+          items:
+            type: object
+            required: [id, title, value, stage, probability, companyName, ageDays]
+            properties:
+              id: { type: integer }
+              title: { type: string }
+              value: { type: number }
+              stage: { type: string }
+              probability: { type: integer }
+              companyName: { type: ["string", "null"] }
+              ageDays: { type: integer }
+        dealCount:
+          type: object
+          required: [open, stalled, closedWon, closedLost]
+          properties:
+            open: { type: integer }
+            stalled: { type: integer }
+            closedWon: { type: integer }
+            closedLost: { type: integer }
+
+    # ── Ticket ───────────────────────────────────────────────────────────
+    Ticket:
+      type: object
+      required: [id, subject, status, priority, channel, contactName, createdAt]
+      properties:
+        id:
+          type: integer
+        subject:
+          type: string
+        description:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [open, in_progress, waiting, resolved, closed]
+        priority:
+          type: string
+          enum: [low, medium, high, urgent]
+        channel:
+          type: string
+          enum: [email, chat, phone, social, portal]
+        contactName:
+          type: string
+        assignedTo:
+          type: ["string", "null"]
+        tags:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+        firstRespondedAt:
+          type: ["string", "null"]
+        resolvedAt:
+          type: ["string", "null"]
+        sla:
+          $ref: "#/components/schemas/SlaStatus"
+
+    SlaStatus:
+      type: object
+      required: [firstResponseDueAt, resolutionDueAt, firstResponseBand, resolutionBand, minutesToResolutionBreach]
+      properties:
+        firstResponseDueAt: { type: string }
+        resolutionDueAt: { type: string }
+        firstResponseBand:
+          type: string
+          enum: [met, on_track, at_risk, breached]
+        resolutionBand:
+          type: string
+          enum: [met, on_track, at_risk, breached]
+        minutesToResolutionBreach:
+          type: ["number", "null"]
+
+    SlaSummary:
+      type: object
+      required: [breached, atRisk, onTrack, met, avgFirstResponseMinutes, avgResolutionMinutes]
+      properties:
+        breached: { type: integer }
+        atRisk: { type: integer }
+        onTrack: { type: integer }
+        met: { type: integer }
+        avgFirstResponseMinutes: { type: ["number", "null"] }
+        avgResolutionMinutes: { type: ["number", "null"] }
+
+    AgentLoad:
+      type: object
+      required: [agent, openTickets, weightedLoad]
+      properties:
+        agent: { type: string }
+        openTickets: { type: integer }
+        weightedLoad: { type: number }
+
+    SuggestAssignee:
+      type: object
+      required: [suggestion, loads]
+      properties:
+        suggestion: { type: ["string", "null"] }
+        loads:
+          type: array
+          items:
+            $ref: "#/components/schemas/AgentLoad"
+
+    TicketInput:
+      type: object
+      required: [subject, priority, channel, contactName]
+      properties:
+        subject:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [open, in_progress, waiting, resolved, closed]
+        priority:
+          type: string
+          enum: [low, medium, high, urgent]
+        channel:
+          type: string
+          enum: [email, chat, phone, social, portal]
+        contactName:
+          type: string
+        assignedTo:
+          type: string
+
+    TicketUpdate:
+      type: object
+      properties:
+        subject:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [open, in_progress, waiting, resolved, closed]
+        priority:
+          type: string
+          enum: [low, medium, high, urgent]
+        assignedTo:
+          type: string
+
+    # ── Campaign ─────────────────────────────────────────────────────────
+    Campaign:
+      type: object
+      required: [id, name, type, status, audienceSize, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        type:
+          type: string
+          enum: [email, sms, social, ads, push]
+        status:
+          type: string
+          enum: [draft, scheduled, active, paused, completed]
+        audienceSize:
+          type: integer
+        sent:
+          type: ["integer", "null"]
+        opened:
+          type: ["integer", "null"]
+        clicked:
+          type: ["integer", "null"]
+        converted:
+          type: ["integer", "null"]
+        scheduledAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        performanceScore:
+          type: ["number", "null"]
+        performanceBand:
+          type: ["string", "null"]
+          enum: [top, average, underperforming, insufficient_data, null]
+        openRate:
+          type: ["number", "null"]
+        clickRate:
+          type: ["number", "null"]
+        conversionRate:
+          type: ["number", "null"]
+
+    ChannelBenchmark:
+      type: object
+      required: [type, campaignCount, avgOpenRate, avgClickRate, avgConversionRate]
+      properties:
+        type: { type: string }
+        campaignCount: { type: integer }
+        avgOpenRate: { type: ["number", "null"] }
+        avgClickRate: { type: ["number", "null"] }
+        avgConversionRate: { type: ["number", "null"] }
+
+    CampaignFunnelTotals:
+      type: object
+      required: [totalAudience, totalSent, totalOpened, totalClicked, totalConverted, overallOpenRate, overallClickRate, overallConversionRate]
+      properties:
+        totalAudience: { type: integer }
+        totalSent: { type: integer }
+        totalOpened: { type: integer }
+        totalClicked: { type: integer }
+        totalConverted: { type: integer }
+        overallOpenRate: { type: ["number", "null"] }
+        overallClickRate: { type: ["number", "null"] }
+        overallConversionRate: { type: ["number", "null"] }
+
+    CampaignInsightsReport:
+      type: object
+      required: [funnel, benchmarks, topPerformer, needsAttention]
+      properties:
+        funnel:
+          $ref: "#/components/schemas/CampaignFunnelTotals"
+        benchmarks:
+          type: array
+          items:
+            $ref: "#/components/schemas/ChannelBenchmark"
+        topPerformer:
+          type: ["object", "null"]
+          properties:
+            id: { type: integer }
+            name: { type: string }
+            performanceScore: { type: number }
+        needsAttention:
+          type: array
+          items:
+            type: object
+            required: [id, name, performanceScore]
+            properties:
+              id: { type: integer }
+              name: { type: string }
+              performanceScore: { type: number }
+
+    CampaignInput:
+      type: object
+      required: [name, type]
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+          enum: [email, sms, social, ads, push]
+        status:
+          type: string
+          enum: [draft, scheduled, active, paused, completed]
+        audienceSize:
+          type: integer
+        scheduledAt:
+          type: string
+
+    CampaignUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+          enum: [email, sms, social, ads, push]
+        status:
+          type: string
+          enum: [draft, scheduled, active, paused, completed]
+        audienceSize:
+          type: integer
+        scheduledAt:
+          type: string
+
+    # ── Invoice ──────────────────────────────────────────────────────────
+    Invoice:
+      type: object
+      required: [id, number, clientName, amount, status, dueDate, createdAt]
+      properties:
+        id:
+          type: integer
+        number:
+          type: string
+        clientName:
+          type: string
+        amount:
+          type: number
+        tax:
+          type: ["number", "null"]
+        status:
+          type: string
+          enum: [draft, sent, paid, overdue, cancelled]
+        dueDate:
+          type: string
+        paidAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    InvoiceInput:
+      type: object
+      required: [clientName, amount, dueDate]
+      properties:
+        clientName:
+          type: string
+        amount:
+          type: number
+        tax:
+          type: number
+        status:
+          type: string
+          enum: [draft, sent, paid, overdue, cancelled]
+        dueDate:
+          type: string
+
+    InvoiceUpdate:
+      type: object
+      properties:
+        clientName:
+          type: string
+        amount:
+          type: number
+        tax:
+          type: number
+        status:
+          type: string
+          enum: [draft, sent, paid, overdue, cancelled]
+        dueDate:
+          type: string
+        paidAt:
+          type: string
+
+    # ── Project ──────────────────────────────────────────────────────────
+    Project:
+      type: object
+      required: [id, name, status, progress, createdAt]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [planning, active, on_hold, completed, cancelled]
+        progress:
+          type: integer
+        owner:
+          type: ["string", "null"]
+        dueDate:
+          type: ["string", "null"]
+        taskCount:
+          type: ["integer", "null"]
+        createdAt:
+          type: string
+
+    ProjectInput:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [planning, active, on_hold, completed, cancelled]
+        owner:
+          type: string
+        dueDate:
+          type: string
+
+    ProjectUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [planning, active, on_hold, completed, cancelled]
+        progress:
+          type: integer
+        owner:
+          type: string
+        dueDate:
+          type: string
+
+    # ── Task ─────────────────────────────────────────────────────────────
+    Task:
+      type: object
+      required: [id, title, status, priority, createdAt]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [todo, in_progress, review, done]
+        priority:
+          type: string
+          enum: [low, medium, high, urgent]
+        projectId:
+          type: ["integer", "null"]
+        assignedTo:
+          type: ["string", "null"]
+        dueDate:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    TaskInput:
+      type: object
+      required: [title]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [todo, in_progress, review, done]
+        priority:
+          type: string
+          enum: [low, medium, high, urgent]
+        projectId:
+          type: integer
+        assignedTo:
+          type: string
+        dueDate:
+          type: string
+
+    TaskUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [todo, in_progress, review, done]
+        priority:
+          type: string
+          enum: [low, medium, high, urgent]
+        assignedTo:
+          type: string
+        dueDate:
+          type: string
+
+    # ── AI ───────────────────────────────────────────────────────────────
+    AiChatInput:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+        context:
+          type: ["string", "null"]
+
+    AiReply:
+      type: object
+      required: [reply, suggestions]
+      properties:
+        reply:
+          type: string
+        suggestions:
+          type: array
+          items:
+            type: string
+
+    MorningBrief:
+      type: object
+      required: [date, headline, insights, priorities]
+      properties:
+        date:
+          type: string
+        headline:
+          type: string
+        insights:
+          type: array
+          items:
+            type: string
+        priorities:
+          type: array
+          items:
+            type: string
+        enabled:
+          type: boolean
+
+    AiStatus:
+      type: object
+      required: [enabled]
+      properties:
+        enabled:
+          type: boolean
+
+    GenerateCampaignCopyInput:
+      type: object
+      properties:
+        brief:
+          type: string
+
+    AiInsight:
+      type: object
+      required: [id, module, kind, entityId, title, content, metadata, createdAt]
+      properties:
+        id:
+          type: integer
+        module:
+          type: string
+        kind:
+          type: string
+        entityId:
+          type: ["integer", "null"]
+        title:
+          type: string
+        content:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: true
+        createdAt:
+          type: string
+
+    FinanceForecast:
+      type: object
+      required: [totalPaid, totalOutstanding, openPipelineValue, weightedPipeline, narrative]
+      properties:
+        totalPaid:
+          type: number
+        totalOutstanding:
+          type: number
+        openPipelineValue:
+          type: number
+        weightedPipeline:
+          type: number
+        narrative:
+          type: string
+        insightId:
+          type: integer
+        enabled:
+          type: boolean
