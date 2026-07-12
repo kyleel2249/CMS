@@ -1,0 +1,13 @@
+{
+  "name": "cintexa-nexus-static",
+  "version": "1.0.0",
+  "description": "CINTEXA NEXUS — AI Business Operating System (static build)",
+  "private": true,
+  "scripts": {
+    "start": "npx serve -s . -l 3000",
+    "serve": "npx serve -s . -l 3000"
+  },
+  "dependencies": {
+    "serve": "^14.2.4"
+  }
+}

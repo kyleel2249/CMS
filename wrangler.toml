@@ -1,0 +1,8 @@
+# Cloudflare Pages deployment config
+# Deploy via: npx wrangler pages deploy artifacts/cintexa-nexus/dist-standalone
+
+name = "cintexa-nexus"
+compatibility_date = "2024-01-01"
+
+[env.production]
+# Add VITE_API_BASE_URL as a secret in Cloudflare dashboard if your API is hosted separately
