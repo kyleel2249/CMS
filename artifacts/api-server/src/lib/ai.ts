@@ -20,10 +20,11 @@ import { count, sum, desc, eq } from "drizzle-orm";
 
 let client: OpenAI | null = null;
 function getClient(): OpenAI | null {
-  if (!process.env.OPENAI_API_KEY) return null;
+  const apiKey = process.env.OPENROUTER_API_KEY ?? process.env.OPENAI_API_KEY;
+  if (!apiKey) return null;
   if (!client) {
     client = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
+      apiKey,
       baseURL: "https://openrouter.ai/api/v1",
       defaultHeaders: {
         "HTTP-Referer": "https://cintexa-nexus.replit.app",
@@ -35,7 +36,7 @@ function getClient(): OpenAI | null {
 }
 
 export function aiEnabled() {
-  return Boolean(process.env.OPENAI_API_KEY);
+  return Boolean(process.env.OPENROUTER_API_KEY ?? process.env.OPENAI_API_KEY);
 }
 
 const MODEL = "google/gemini-2.5-flash";
