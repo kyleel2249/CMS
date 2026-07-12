@@ -1,0 +1,20 @@
+{
+  "name": "cintexa-nexus",
+  "version": "1.0.0",
+  "description": "CINTEXA NEXUS — AI Business Operating System. Full-stack Express + React in a single npm process.",
+  "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "start": "cross-env NODE_ENV=production PORT=3000 node server/server-standalone.mjs",
+    "dev": "cross-env NODE_ENV=development PORT=3000 node server/server-standalone.mjs",
+    "setup": "node scripts/setup.mjs",
+    "seed": "node scripts/seed.mjs",
+    "db:push": "node scripts/db-push.mjs"
+  },
+  "dependencies": {
+    "cross-env": "^7.0.3",
+    "pg": "^8.13.3"
+  }
+}

@@ -1,0 +1,16 @@
+# Cloudflare Pages — static frontend deployment
+# The React app is served as a static site; the Express API runs separately.
+#
+# Deploy:
+#   1. Install Wrangler:  npm install -g wrangler
+#   2. Login:            wrangler login
+#   3. Deploy pages:     wrangler pages deploy ../public --project-name cintexa-nexus
+#
+# For the API backend on Cloudflare:
+#   Option A (recommended): Deploy API to a Node.js host (Railway, Render, Fly.io)
+#                           then set VITE_API_BASE_URL at build time.
+#   Option B: Use Cloudflare Workers with a compatibility layer (see workers/ below).
+
+name = "cintexa-nexus"
+compatibility_date = "2025-01-01"
+pages_build_output_dir = "../public"
