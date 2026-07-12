@@ -6,3 +6,9 @@ id = "kXByfK3KUsLMh8e5A8RJm"
 uri = "file://cintexa-nexus-deploy.zip"
 type = "unspecified"
 title = "cintexa-nexus-deploy.zip"
+
+[[outputs]]
+id = "jntXrbneIomLibWjVPT2q"
+uri = "file://cintexa-nexus-standalone.zip"
+type = "unspecified"
+title = "cintexa-nexus-standalone.zip"
