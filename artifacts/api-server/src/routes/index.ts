@@ -25,6 +25,7 @@ import workflowBuilderRouter from "./workflow-builder";
 import marketplaceRouter from "./marketplace";
 import billingRouter from "./billing";
 import projectDocsRouter from "./project-docs";
+import nexusRouter from "./nexus";
 
 const router: IRouter = Router();
 
@@ -54,5 +55,6 @@ router.use(workflowBuilderRouter);
 router.use(marketplaceRouter);
 router.use(billingRouter);
 router.use(projectDocsRouter);
+router.use(nexusRouter);
 
 export default router;

@@ -20,3 +20,4 @@ export * from "./workflow-builder";
 export * from "./integrations";
 export * from "./billing";
 export * from "./project-extensions";
+export * from "./ai-memory";
