@@ -1,2 +1,0 @@
-- [Cintexa Nexus project layout](cintexa-nexus.md) — imported app lives 3 levels deep in ReplitExport-* folders; stack, run commands, and OpenAPI codegen workflow.
-- [NEXUS Sales & CRM revenue intelligence](cintexa-nexus.md) — forecast quota ties to a linked OKR key result when present; lead scoring is a transparent rule-based engine, not AI, computed live and only persisted on recalculate.

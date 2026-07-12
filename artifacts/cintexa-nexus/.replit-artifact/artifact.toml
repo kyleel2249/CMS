@@ -1,0 +1,27 @@
+kind = "web"
+previewPath = "/"
+title = "CINTEXA NEXUS"
+version = "1.0.0"
+id = "artifacts/cintexa-nexus"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 5000
+
+[services.development]
+run = "pnpm --filter @workspace/cintexa-nexus run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/cintexa-nexus", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/cintexa-nexus/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "5000"
+BASE_PATH = "/"
