@@ -16,6 +16,9 @@ import {
   notesTable,
   goalsTable,
   keyResultsTable,
+  emailThreadsTable,
+  emailMessagesTable,
+  webhooksTable,
 } from "@workspace/db";
 
 async function seed() {
@@ -578,7 +581,108 @@ Review cadence: Weekly Fridays`,
     },
   ]);
 
-  console.log(`Seeded ${companies.length} companies, knowledge base, automations, collaboration notes, and 3 Q3 OKRs.`);
+  // ── Email threads + messages ──────────────────────────────────────────────
+  const threads = await db.insert(emailThreadsTable).values([
+    {
+      subject: "Meridian Corp — Enterprise Renewal Contract",
+      participants: ["elena.cross@meridiancorp.com", "jordan.lee@cintexanexus.com"],
+      isRead: true,
+      isStarred: true,
+      labels: ["contract", "priority"],
+      contactId: 1,
+      dealId: 1,
+      aiSummary: "Elena confirmed renewal at $184K with a 15% expansion. Legal review complete. Awaiting countersignature.",
+      aiTriage: "priority",
+      lastMessageAt: new Date("2026-07-10T14:32:00Z"),
+    },
+    {
+      subject: "Vertex Platform Upgrade — Multi-Year Discount Discussion",
+      participants: ["marcus.dane@vertexsolutions.io", "sarah.chen@cintexanexus.com"],
+      isRead: false,
+      isStarred: false,
+      labels: ["negotiation"],
+      contactId: 2,
+      dealId: 2,
+      aiSummary: "Marcus is pushing for a 20% multi-year discount. Current offer is 15%. Decision expected this week.",
+      aiTriage: "follow-up",
+      lastMessageAt: new Date("2026-07-11T09:15:00Z"),
+    },
+    {
+      subject: "Northgate Retail Rollout — Procurement Review",
+      participants: ["priya.nair@northgateinc.com", "jordan.lee@cintexanexus.com", "legal@northgateinc.com"],
+      isRead: false,
+      isStarred: true,
+      labels: ["proposal", "legal"],
+      contactId: 3,
+      dealId: 3,
+      aiSummary: "Procurement team reviewing proposal. Legal flagged two SLA clauses. Priya expects final sign-off by July 18.",
+      aiTriage: "action-required",
+      lastMessageAt: new Date("2026-07-11T16:48:00Z"),
+    },
+    {
+      subject: "Re: SSO Login Failures — SAML Auth Fix",
+      participants: ["marcus.dane@vertexsolutions.io", "support@cintexanexus.com"],
+      isRead: true,
+      isStarred: false,
+      labels: ["support", "resolved"],
+      contactId: 2,
+      ticketId: 1,
+      aiSummary: "SAML certificate mismatch resolved by rotating IdP metadata. Marcus confirmed all users can now log in.",
+      aiTriage: "resolved",
+      lastMessageAt: new Date("2026-07-09T11:22:00Z"),
+    },
+    {
+      subject: "Aurora Health Pilot — Success Metrics Review",
+      participants: ["samuel.okafor@aurorahealth.org", "jordan.lee@cintexanexus.com"],
+      isRead: false,
+      isStarred: false,
+      labels: ["pilot"],
+      contactId: 4,
+      dealId: 4,
+      aiSummary: "Samuel wants to review pilot KPIs before recommending full rollout. Meeting scheduled for July 22.",
+      aiTriage: "follow-up",
+      lastMessageAt: new Date("2026-07-10T08:05:00Z"),
+    },
+    {
+      subject: "Blue Harbor — Initial Discovery Follow-up",
+      participants: ["nina.petrova@blueharbor.com", "alex.rivera@cintexanexus.com"],
+      isRead: true,
+      isStarred: false,
+      labels: ["prospecting"],
+      contactId: 5,
+      dealId: 5,
+      aiSummary: "Nina requested a full product demo focused on logistics module. Demo slot confirmed for July 17.",
+      aiTriage: "scheduled",
+      lastMessageAt: new Date("2026-07-08T15:30:00Z"),
+    },
+  ]).returning();
+
+  await db.insert(emailMessagesTable).values([
+    // Thread 1 — Meridian renewal
+    { threadId: threads[0].id, from: "elena.cross@meridiancorp.com", to: ["jordan.lee@cintexanexus.com"], body: "Jordan, we're ready to proceed with the renewal. Can you send over the updated contract with the expansion terms?", isOutbound: false, isRead: true, sentAt: new Date("2026-07-08T10:00:00Z") },
+    { threadId: threads[0].id, from: "jordan.lee@cintexanexus.com", to: ["elena.cross@meridiancorp.com"], body: "Hi Elena, attached is the updated contract reflecting the 15% expansion. Legal has signed off on our end. Looking forward to finalizing!", isOutbound: true, isRead: true, sentAt: new Date("2026-07-09T09:30:00Z") },
+    { threadId: threads[0].id, from: "elena.cross@meridiancorp.com", to: ["jordan.lee@cintexanexus.com"], body: "Perfect. I've passed it to our legal team. Expect the countersignature by end of week.", isOutbound: false, isRead: true, sentAt: new Date("2026-07-10T14:32:00Z") },
+    // Thread 2 — Vertex negotiation
+    { threadId: threads[1].id, from: "marcus.dane@vertexsolutions.io", to: ["sarah.chen@cintexanexus.com"], body: "Sarah, we'd like to revisit the pricing for a 3-year commitment. Our CFO is asking for 20% off list.", isOutbound: false, isRead: false, sentAt: new Date("2026-07-11T09:15:00Z") },
+    // Thread 3 — Northgate
+    { threadId: threads[2].id, from: "priya.nair@northgateinc.com", to: ["jordan.lee@cintexanexus.com", "legal@northgateinc.com"], body: "Team — legal has flagged sections 4.2 and 8.1 of the SLA. Please review and propose revised language.", isOutbound: false, isRead: false, sentAt: new Date("2026-07-11T16:48:00Z") },
+    // Thread 4 — SSO fix
+    { threadId: threads[3].id, from: "support@cintexanexus.com", to: ["marcus.dane@vertexsolutions.io"], body: "Hi Marcus, we've identified the issue — the SAML certificate on your IdP expired. Please rotate it using the steps below and re-upload the metadata.", isOutbound: true, isRead: true, sentAt: new Date("2026-07-09T08:45:00Z") },
+    { threadId: threads[3].id, from: "marcus.dane@vertexsolutions.io", to: ["support@cintexanexus.com"], body: "Done! All team members can now log in. Thanks for the quick fix.", isOutbound: false, isRead: true, sentAt: new Date("2026-07-09T11:22:00Z") },
+    // Thread 5 — Aurora
+    { threadId: threads[4].id, from: "samuel.okafor@aurorahealth.org", to: ["jordan.lee@cintexanexus.com"], body: "Jordan, before I recommend full rollout to our CISO I need a formal review of the pilot KPIs. Can we schedule a call?", isOutbound: false, isRead: false, sentAt: new Date("2026-07-10T08:05:00Z") },
+    // Thread 6 — Blue Harbor
+    { threadId: threads[5].id, from: "alex.rivera@cintexanexus.com", to: ["nina.petrova@blueharbor.com"], body: "Hi Nina, great chatting yesterday! I've reserved a 45-minute demo slot for July 17 at 2pm BST focused on the logistics and tracking modules. Does that work?", isOutbound: true, isRead: true, sentAt: new Date("2026-07-08T15:30:00Z") },
+  ]);
+
+  // ── Webhooks ──────────────────────────────────────────────────────────────
+  await db.insert(webhooksTable).values([
+    { name: "Slack — Deal Stage Changes", url: "https://hooks.slack.com/services/T0123/B0456/placeholder", events: "deal.stage_changed,deal.won,deal.lost", isActive: true, deliveriesTotal: 142, deliveriesSuccess: 140 },
+    { name: "Zapier — New Lead Created", url: "https://hooks.zapier.com/hooks/catch/0123456/placeholder", events: "lead.created,lead.qualified", isActive: true, deliveriesTotal: 89, deliveriesSuccess: 89 },
+    { name: "Internal BI — Invoice Paid", url: "https://bi.internal.corp/webhook/invoices", events: "invoice.paid,invoice.overdue", isActive: false, deliveriesTotal: 34, deliveriesSuccess: 31 },
+  ]);
+
+  console.log(`Seeded ${companies.length} companies, knowledge base, automations, collaboration notes, 3 Q3 OKRs, ${threads.length} email threads, and webhooks.`);
 }
 
 seed()

@@ -456,7 +456,7 @@ export default function Extensions() {
                         </div>
                         <p className="text-xs text-muted-foreground font-mono mt-1 truncate">{wh.url}</p>
                         <div className="flex flex-wrap gap-1 mt-2">
-                          {wh.events?.map((ev: string) => <Badge key={ev} variant="secondary" className="text-xs font-mono px-1 h-4">{ev}</Badge>)}
+                          {(typeof wh.events === "string" ? wh.events.split(",") : (wh.events ?? [])).map((ev: string) => <Badge key={ev} variant="secondary" className="text-xs font-mono px-1 h-4">{ev.trim()}</Badge>)}
                         </div>
                         <p className="text-xs text-muted-foreground font-mono mt-1">{wh.deliveriesTotal} deliveries · {wh.deliveriesSuccess} success</p>
                       </div>
