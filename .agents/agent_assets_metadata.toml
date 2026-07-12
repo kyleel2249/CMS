@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "kXByfK3KUsLMh8e5A8RJm"
+uri = "file://cintexa-nexus-deploy.zip"
+type = "unspecified"
+title = "cintexa-nexus-deploy.zip"
