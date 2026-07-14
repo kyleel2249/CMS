@@ -1,1 +1,2 @@
 - [CINTEXA NEXUS agent scheduling](cintexa-nexus-agent-scheduling.md) — no cron lib; use in-process setInterval sweep + automationsTable as the on/off + run-log store for scheduled AI agents.
+- [CINTEXA NEXUS Windows/npm standalone package](cintexa-nexus-standalone-package.md) — manually copied, drifts from lib/db schema; verify by actually running it, not by inspection.
