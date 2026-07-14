@@ -49,6 +49,16 @@ pnpm --filter @workspace/db run push
 - Invoice payment collection (Stripe) was proposed but the user chose to skip it for now — not built. Revisit if the user asks again.
 - Changes pushed to the GitHub remote (`main`).
 - Mobile companion app remains deferred/not requested again.
+- After re-importing the repo, this session did not set up the Replit-hosted workflows (user asked for a different change instead — see below). To get the app running on Replit: install deps (`pnpm install`), push the DB schema, seed demo data, and start the two artifact workflows described above; also set `OPENROUTER_API_KEY` as a secret.
+
+## Windows / npm Standalone Package
+
+`cintexa-nexus-standalone/` (zipped as `cintexa-nexus-standalone.zip`) is a self-contained copy of the app that runs on Windows with plain `npm` — no pnpm, no workspaces. One process serves both the API and the built React frontend. See `cintexa-nexus-standalone/README.md` for setup (`npm install`, `npm run setup`, `npm start`).
+
+- Verified end-to-end on 2026-07-14: `npm install` → `npm run db:push` → `npm run seed` → `npm start` served the SPA, static assets, and `/api/*` all correctly.
+- Fixed drift from the main schema: `scripts/seed.mjs` was inserting into `goals` (with a nonexistent `target_date` column instead of `quarter`/`year`), `knowledge_articles` (`helpful_count` → `helpful`), and `automations` (`trigger_type`/`actions`/`is_active` → `trigger`/`action`/`status` + matching config columns).
+- Fixed a packaging bug: `server-standalone.mjs` (built from `artifacts/api-server/src/server-standalone.ts`) always looks for the static frontend in a `public/` folder next to itself. The package originally shipped `public/` at the package root, so `npm start` returned 404s for `/`. Moved the frontend into `cintexa-nexus-standalone/server/public/` and updated `firebase/firebase.json` and `cloudflare/wrangler.toml` to match.
+- This package's server bundle and static frontend are built once (via `artifacts/api-server/build-standalone.mjs` and `vite.config.standalone.ts`) inside the Replit pnpm workspace and then copied in — running `npm run setup`/`npm start` on Windows never needs pnpm.
 
 ## Key Modules (Frontend Pages)
 

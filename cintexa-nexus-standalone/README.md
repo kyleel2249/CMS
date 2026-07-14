@@ -58,7 +58,7 @@ npm start
     │
     └─► server/server-standalone.mjs  (Node.js, port 3000)
             ├── GET /api/*     → Express route handlers (CRM, AI, Finance…)
-            └── GET /*         → public/index.html  (React SPA)
+            └── GET /*         → server/public/index.html  (React SPA)
 ```
 
 No separate frontend dev server. No proxy. One process, one port.
@@ -128,7 +128,7 @@ Cloudflare Pages hosts the React app. The API needs a separate Node.js host.
 ```cmd
 npm install -g wrangler
 wrangler login
-wrangler pages deploy public --project-name cintexa-nexus
+wrangler pages deploy server/public --project-name cintexa-nexus
 ```
 
 ---
@@ -137,15 +137,15 @@ wrangler pages deploy public --project-name cintexa-nexus
 
 ```
 cintexa-nexus-standalone/
-├── public/                  # Built React frontend (index.html + assets)
-│   ├── index.html
-│   └── assets/
-├── server/                  # Bundled Express API (no node_modules needed)
+├── server/                  # Bundled Express API + static frontend
 │   ├── server-standalone.mjs
 │   ├── pino-worker.mjs
 │   ├── pino-file.mjs
 │   ├── pino-pretty.mjs
-│   └── thread-stream-worker.mjs
+│   ├── thread-stream-worker.mjs
+│   └── public/              # Built React frontend (index.html + assets)
+│       ├── index.html
+│       └── assets/
 ├── scripts/
 │   ├── setup.mjs            # First-time setup wizard
 │   ├── db-push.mjs          # Push DB schema (run via setup)

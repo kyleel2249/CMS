@@ -168,10 +168,10 @@ async function seed() {
 
   // Goals + key results
   const { rows: goals } = await q(`
-    INSERT INTO goals (title, description, owner, target_date, status, progress) VALUES
-      ('Grow ARR to $5M by Q4 2026','Expand revenue through enterprise upsells and new logo acquisition.','Sarah Chen','2026-12-31','on_track',62),
-      ('Launch AI-powered support automation','Reduce ticket resolution time by 40% using NEXUS AI triage.','Alex Rivera','2026-09-30','on_track',55),
-      ('Build $2M+ pipeline for Q3','Ensure sufficient pipeline coverage for Q3 quota attainment.','Jordan Lee','2026-09-30','on_track',71)
+    INSERT INTO goals (title, description, owner, quarter, year, status, progress) VALUES
+      ('Grow ARR to $5M by Q4 2026','Expand revenue through enterprise upsells and new logo acquisition.','Sarah Chen','Q4',2026,'on_track',62),
+      ('Launch AI-powered support automation','Reduce ticket resolution time by 40% using NEXUS AI triage.','Alex Rivera','Q3',2026,'on_track',55),
+      ('Build $2M+ pipeline for Q3','Ensure sufficient pipeline coverage for Q3 quota attainment.','Jordan Lee','Q3',2026,'on_track',71)
     RETURNING id`);
 
   await q(`
@@ -184,17 +184,17 @@ async function seed() {
 
   // Knowledge articles
   await q(`
-    INSERT INTO knowledge_articles (title, slug, content, category, tags, status, helpful_count) VALUES
+    INSERT INTO knowledge_articles (title, slug, content, category, tags, status, helpful) VALUES
       ('Getting Started with CINTEXA NEXUS','getting-started','Welcome to CINTEXA NEXUS. This guide walks you through setting up your account, importing contacts, and activating your first AI workflow.','onboarding','setup,quickstart,beginner','published',42),
       ('How AI Deal Scoring Works','ai-deal-scoring','NEXUS AI analyzes 14 signals from your CRM to produce a deal win probability score (0–100). Signals include engagement recency, deal velocity, company size, and stage progression.','ai','ai,deals,scoring','published',31),
       ('Setting Up Webhook Integrations','setting-up-webhook-integrations','Webhooks let you push real-time events to external systems. Navigate to Extensions → Webhooks to create and test outbound webhooks.','integrations','webhooks,api,integrations','published',18)`);
 
   // Automations
   await q(`
-    INSERT INTO automations (name, description, trigger_type, trigger_config, actions, is_active, runs_total, runs_success) VALUES
-      ('New Lead Auto-Qualify','Automatically score and qualify new leads using NEXUS AI when they are created.','lead.created','{"source": "any"}','[{"type":"ai.qualify_lead"},{"type":"notify_slack","channel":"#sales"}]',true,89,87),
-      ('Overdue Invoice Alert','Send a Slack alert and create a follow-up task when an invoice becomes overdue.','invoice.overdue','{"grace_days": 0}','[{"type":"notify_slack","channel":"#finance"},{"type":"create_task","assignee":"account_owner"}]',true,12,12),
-      ('Deal Won Celebration','Post a win announcement to Slack and log an activity when a deal moves to Closed Won.','deal.stage_changed','{"to_stage": "closed_won"}','[{"type":"notify_slack","channel":"#wins"},{"type":"create_activity"}]',true,6,6)`);
+    INSERT INTO automations (name, description, trigger, trigger_config, action, action_config, status, runs_total, runs_success) VALUES
+      ('New Lead Auto-Qualify','Automatically score and qualify new leads using NEXUS AI when they are created.','lead.created','{"source": "any"}','ai.qualify_lead','{"notify_slack":"#sales"}','active',89,87),
+      ('Overdue Invoice Alert','Send a Slack alert and create a follow-up task when an invoice becomes overdue.','invoice.overdue','{"grace_days": 0}','notify_slack','{"channel":"#finance","create_task":"account_owner"}','active',12,12),
+      ('Deal Won Celebration','Post a win announcement to Slack and log an activity when a deal moves to Closed Won.','deal.stage_changed','{"to_stage": "closed_won"}','notify_slack','{"channel":"#wins","create_activity":true}','active',6,6)`);
 
   console.log("✅ Demo data seeded successfully.");
   await pool.end();
