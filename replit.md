@@ -39,7 +39,14 @@ pnpm --filter @workspace/db run push
 |---|---|
 | `DATABASE_URL` | Auto-provided by Replit PostgreSQL |
 | `SESSION_SECRET` | Cookie signing secret (set as Replit Secret) |
-| `OPENROUTER_API_KEY` | AI Copilot, deal scoring, anomaly detection (set as Replit Secret) |
+| `OPENROUTER_API_KEY` | AI Copilot, deal scoring, anomaly detection (set as Replit Secret) — configured |
+
+## Setup Status (as of 2026-07-14)
+
+- Dependencies installed, dev DB schema pushed (`pnpm --filter @workspace/db run push`), demo data seeded (`pnpm --filter @workspace/scripts run seed`).
+- Both artifacts (API Server, CINTEXA NEXUS) run via their managed artifact workflows — legacy duplicate workflows were removed.
+- Changes pushed to the GitHub remote (`main`).
+- Larger product roadmap (multi-agent marketing/sales/support automation, mobile companion app, billing/payments) proposed as separate follow-up project tasks rather than built here — see project tasks list.
 
 ## Key Modules (Frontend Pages)
 
