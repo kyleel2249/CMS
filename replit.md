@@ -45,8 +45,10 @@ pnpm --filter @workspace/db run push
 
 - Dependencies installed, dev DB schema pushed (`pnpm --filter @workspace/db run push`), demo data seeded (`pnpm --filter @workspace/scripts run seed`).
 - Both artifacts (API Server, CINTEXA NEXUS) run via their managed artifact workflows — legacy duplicate workflows were removed.
+- AI agent automation is live: 6 agents (Lead Qualifier, Support Triage, Marketing Copy, Sales Pipeline Forecast, Anomaly Watchdog, OKR Intelligence) run automatically — some on event triggers (new lead/ticket), some on a daily schedule via an in-process sweep in `artifacts/api-server/src/lib/automations.ts`. Manage on/off + view run history on the Automations page.
+- Invoice payment collection (Stripe) was proposed but the user chose to skip it for now — not built. Revisit if the user asks again.
 - Changes pushed to the GitHub remote (`main`).
-- Larger product roadmap (multi-agent marketing/sales/support automation, mobile companion app, billing/payments) proposed as separate follow-up project tasks rather than built here — see project tasks list.
+- Mobile companion app remains deferred/not requested again.
 
 ## Key Modules (Frontend Pages)
 
