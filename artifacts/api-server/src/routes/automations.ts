@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db, automationsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
 import * as ai from "../lib/ai";
+import { runAutomationAction } from "../lib/automations";
 
 const router = Router();
 
@@ -93,11 +94,19 @@ router.post("/automations/:id/run", async (req, res) => {
   try {
     const [row] = await db.select().from(automationsTable).where(eq(automationsTable.id, Number(req.params.id)));
     if (!row) return res.status(404).json({ error: "Not found" });
+
+    const outcome = await runAutomationAction(row.action);
+    const succeeded = outcome.success > 0 || outcome.processed === 0;
+
     const [updated] = await db.update(automationsTable)
-      .set({ runsTotal: row.runsTotal + 1, runsSuccess: row.runsSuccess + 1, lastRunAt: new Date() })
+      .set({
+        runsTotal: row.runsTotal + 1,
+        runsSuccess: row.runsSuccess + (succeeded ? 1 : 0),
+        lastRunAt: new Date(),
+      })
       .where(eq(automationsTable.id, row.id))
       .returning();
-    res.json({ success: true, automation: toResponse(updated) });
+    res.json({ success: succeeded, processed: outcome.processed, automation: toResponse(updated) });
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Failed to run automation" });
