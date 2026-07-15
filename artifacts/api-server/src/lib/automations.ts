@@ -6,6 +6,17 @@ import {
   financeForecast,
   detectAnomalies,
   mapMetricsToOKRs,
+  hedgeFundCio,
+  quantResearcher,
+  bloombergTerminal,
+  multiagentEngineer,
+  fullstackDeveloper,
+  financialDataEngineer,
+  mlScientist,
+  blockchainAnalyst,
+  cybersecurityExpert,
+  uxDesigner,
+  cloudArchitect,
   aiEnabled,
 } from "./ai";
 import { logger } from "./logger";
@@ -90,6 +101,94 @@ const DEFAULT_AUTOMATIONS = [
     description: "Refreshes key result progress from live data and writes an AI forecast narrative for each company goal, daily.",
     trigger: "schedule.daily",
     action: "ai.map_okrs",
+    triggerConfig: {},
+    actionConfig: {},
+  },
+  {
+    name: "Hedge Fund CIO Agent",
+    description: "Evaluates the company's revenue, pipeline, and deal portfolio with an investment-grade lens — rates business health and surfaces the top risk and opportunity daily.",
+    trigger: "schedule.daily",
+    action: "ai.hedge_fund_cio",
+    triggerConfig: {},
+    actionConfig: {},
+  },
+  {
+    name: "Quant Researcher Agent",
+    description: "Applies Renaissance-style statistical analysis to sales and lead data — computes confidence intervals, flags anomalies, and surfaces actionable alpha signals daily.",
+    trigger: "schedule.daily",
+    action: "ai.quant_researcher",
+    triggerConfig: {},
+    actionConfig: {},
+  },
+  {
+    name: "Bloomberg Terminal Agent",
+    description: "Aggregates all key financial and pipeline metrics into a structured terminal-style intelligence snapshot every day — REV, PIPE, WINR, and more in one place.",
+    trigger: "schedule.daily",
+    action: "ai.bloomberg_terminal",
+    triggerConfig: {},
+    actionConfig: {},
+  },
+  {
+    name: "Multi-Agent Systems Engineer",
+    description: "Audits the automation fleet for coordination gaps, single points of failure, and missing trigger coverage — recommends architectural improvements daily.",
+    trigger: "schedule.daily",
+    action: "ai.multiagent_engineer",
+    triggerConfig: {},
+    actionConfig: {},
+  },
+  {
+    name: "Full-Stack Developer Agent",
+    description: "Reviews the project portfolio for delivery risks, stalled work, and scope creep — flags what needs unblocking and suggests one process improvement, daily.",
+    trigger: "schedule.daily",
+    action: "ai.fullstack_developer",
+    triggerConfig: {},
+    actionConfig: {},
+  },
+  {
+    name: "Financial Data Engineer",
+    description: "Validates data integrity across invoices, deals, leads, and contacts — scores overall data quality and surfaces the top integrity issues for remediation, daily.",
+    trigger: "schedule.daily",
+    action: "ai.data_engineer",
+    triggerConfig: {},
+    actionConfig: {},
+  },
+  {
+    name: "Machine Learning Scientist",
+    description: "Analyzes conversion rates by lead source, deal stage distributions, and score patterns to surface the strongest predictive signals for qualifying leads and winning deals, daily.",
+    trigger: "schedule.daily",
+    action: "ai.ml_scientist",
+    triggerConfig: {},
+    actionConfig: {},
+  },
+  {
+    name: "Blockchain Analyst",
+    description: "Audits invoice transaction patterns weekly for collection failures, suspicious amounts, and audit trail gaps that could signal fraud risk or accounting errors.",
+    trigger: "schedule.weekly",
+    action: "ai.blockchain_analyst",
+    triggerConfig: {},
+    actionConfig: {},
+  },
+  {
+    name: "Cybersecurity Expert",
+    description: "Monitors automation failure patterns, ghost agents, and data integrity gaps for security concerns — flags anomalies and recommends mitigations daily.",
+    trigger: "schedule.daily",
+    action: "ai.cybersecurity_expert",
+    triggerConfig: {},
+    actionConfig: {},
+  },
+  {
+    name: "UI/UX Motion Designer",
+    description: "Analyzes support ticket channels, pain-point keywords, and knowledge base engagement weekly to identify user experience friction and recommend design interventions.",
+    trigger: "schedule.weekly",
+    action: "ai.ux_designer",
+    triggerConfig: {},
+    actionConfig: {},
+  },
+  {
+    name: "Cloud Infrastructure Architect",
+    description: "Reviews automation topology, concurrency risks, and data growth signals daily — provides infrastructure scaling and resilience recommendations for the next 90 days.",
+    trigger: "schedule.daily",
+    action: "ai.cloud_architect",
     triggerConfig: {},
     actionConfig: {},
   },
@@ -227,6 +326,28 @@ export async function runAutomationAction(action: string): Promise<{ processed: 
       return runAnomalyDetection();
     case "ai.map_okrs":
       return runOkrIntelligence();
+    case "ai.hedge_fund_cio":
+      return hedgeFundCio().then((r) => ({ processed: 1, success: r ? 1 : 0 }));
+    case "ai.quant_researcher":
+      return quantResearcher().then((r) => ({ processed: 1, success: r ? 1 : 0 }));
+    case "ai.bloomberg_terminal":
+      return bloombergTerminal().then((r) => ({ processed: 1, success: r ? 1 : 0 }));
+    case "ai.multiagent_engineer":
+      return multiagentEngineer().then((r) => ({ processed: 1, success: r ? 1 : 0 }));
+    case "ai.fullstack_developer":
+      return fullstackDeveloper().then((r) => ({ processed: 1, success: r ? 1 : 0 }));
+    case "ai.data_engineer":
+      return financialDataEngineer().then((r) => ({ processed: 1, success: r ? 1 : 0 }));
+    case "ai.ml_scientist":
+      return mlScientist().then((r) => ({ processed: 1, success: r ? 1 : 0 }));
+    case "ai.blockchain_analyst":
+      return blockchainAnalyst().then((r) => ({ processed: 1, success: r ? 1 : 0 }));
+    case "ai.cybersecurity_expert":
+      return cybersecurityExpert().then((r) => ({ processed: 1, success: r ? 1 : 0 }));
+    case "ai.ux_designer":
+      return uxDesigner().then((r) => ({ processed: 1, success: r ? 1 : 0 }));
+    case "ai.cloud_architect":
+      return cloudArchitect().then((r) => ({ processed: 1, success: r ? 1 : 0 }));
     default:
       // Unknown/manual action types (email, crm, slack, webhook, report) — no-op for now.
       return { processed: 0, success: 0 };

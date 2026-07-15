@@ -760,6 +760,504 @@ export async function commentOnEvent(event: {
   return result;
 }
 
+// ── Specialist AI Agents ──────────────────────────────────────────────────────
+
+export async function hedgeFundCio() {
+  const [allInvoices, allDeals, allLeads, allContacts] = await Promise.all([
+    db.select().from(invoicesTable),
+    db.select().from(dealsTable),
+    db.select().from(contactsTable),
+    db.select().from(leadsTable),
+  ]);
+
+  const paidRevenue = allInvoices.filter((i) => i.status === "paid").reduce((s, i) => s + Number(i.amount), 0);
+  const outstandingRevenue = allInvoices.filter((i) => i.status !== "paid").reduce((s, i) => s + Number(i.amount), 0);
+  const overdueRevenue = allInvoices.filter((i) => i.status === "overdue").reduce((s, i) => s + Number(i.amount), 0);
+  const openDeals = allDeals.filter((d) => d.stage !== "closed_won" && d.stage !== "closed_lost");
+  const wonDeals = allDeals.filter((d) => d.stage === "closed_won");
+  const weightedPipeline = openDeals.reduce((s, d) => s + (Number(d.value) * d.probability) / 100, 0);
+  const closedDeals = allDeals.filter((d) => d.stage === "closed_won" || d.stage === "closed_lost");
+  const winRate = closedDeals.length > 0 ? Math.round((wonDeals.length / closedDeals.length) * 100) : 0;
+
+  const portfolio = {
+    paidRevenue,
+    outstandingRevenue,
+    overdueRevenue,
+    weightedPipeline: Math.round(weightedPipeline),
+    winRate,
+    totalDeals: allDeals.length,
+    openDeals: openDeals.length,
+    totalContacts: allContacts.length,
+    qualifiedLeads: allLeads.filter((l) => l.status === "qualified").length,
+  };
+
+  const result = await completeJson<{ thesis: string; rating: string; topRisk: string; topOpportunity: string }>(
+    "You are NEXUS AI operating as a world-class hedge fund Chief Investment Officer. Analyze this company's financial and pipeline portfolio. Rate business health as Strong/Healthy/Caution/Distressed and provide an investment-grade thesis. Respond only with JSON: { thesis: string (3-4 sentences, exec-level), rating: 'Strong'|'Healthy'|'Caution'|'Distressed', topRisk: string (1 sentence), topOpportunity: string (1 sentence) }.",
+    JSON.stringify(portfolio),
+  );
+  if (!result) return null;
+
+  return saveInsight({
+    module: "finance",
+    kind: "hedge_fund_cio",
+    entityId: null,
+    title: `CIO Portfolio Rating: ${result.rating}`,
+    content: `${result.thesis} Top risk: ${result.topRisk} Top opportunity: ${result.topOpportunity}`,
+    metadata: { ...result, portfolio },
+  });
+}
+
+export async function quantResearcher() {
+  const [allLeads, allDeals, allInvoices] = await Promise.all([
+    db.select().from(leadsTable),
+    db.select().from(dealsTable),
+    db.select().from(invoicesTable),
+  ]);
+
+  const scores = allLeads.map((l) => l.score ?? 0).filter((s) => s > 0);
+  const meanScore = scores.length > 0 ? scores.reduce((s, v) => s + v, 0) / scores.length : 0;
+  const variance = scores.length > 1 ? scores.reduce((s, v) => s + Math.pow(v - meanScore, 2), 0) / (scores.length - 1) : 0;
+  const stdDev = Math.sqrt(variance);
+
+  const dealValues = allDeals.map((d) => Number(d.value));
+  const meanDealValue = dealValues.length > 0 ? dealValues.reduce((s, v) => s + v, 0) / dealValues.length : 0;
+  const dealStdDev = dealValues.length > 1
+    ? Math.sqrt(dealValues.reduce((s, v) => s + Math.pow(v - meanDealValue, 2), 0) / (dealValues.length - 1))
+    : 0;
+
+  const closedDeals = allDeals.filter((d) => d.stage === "closed_won" || d.stage === "closed_lost");
+  const wonDeals = closedDeals.filter((d) => d.stage === "closed_won");
+  const winRate = closedDeals.length > 0 ? wonDeals.length / closedDeals.length : 0;
+  const winRateCI95 = closedDeals.length > 0 ? 1.96 * Math.sqrt((winRate * (1 - winRate)) / closedDeals.length) : 0;
+
+  const stats = {
+    leadScoreMean: Math.round(meanScore),
+    leadScoreStdDev: Math.round(stdDev),
+    leadCount: scores.length,
+    dealValueMean: Math.round(meanDealValue),
+    dealValueStdDev: Math.round(dealStdDev),
+    dealCount: dealValues.length,
+    winRate: Math.round(winRate * 100),
+    winRateCI95Lower: Math.round(Math.max(0, (winRate - winRateCI95) * 100)),
+    winRateCI95Upper: Math.round(Math.min(100, (winRate + winRateCI95) * 100)),
+    totalInvoiced: allInvoices.reduce((s, i) => s + Number(i.amount), 0),
+  };
+
+  const result = await completeText(
+    "You are NEXUS AI operating as a quantitative trading researcher from Renaissance Technologies. Analyze these business statistics with a rigorous quant lens. Surface non-obvious patterns, flag statistical anomalies, and give 2-3 alpha signals the team should act on. Be precise, cite numbers. No markdown headers.",
+    JSON.stringify(stats),
+  );
+
+  return saveInsight({
+    module: "analytics",
+    kind: "quant_researcher",
+    entityId: null,
+    title: `Quant Analysis — Win rate ${stats.winRate}% (95% CI: ${stats.winRateCI95Lower}–${stats.winRateCI95Upper}%)`,
+    content: result ?? `Lead score μ=${stats.leadScoreMean} σ=${stats.leadScoreStdDev}. Deal value μ=${stats.dealValueMean.toLocaleString()} σ=${stats.dealValueStdDev.toLocaleString()}. Win rate ${stats.winRate}%.`,
+    metadata: stats,
+  });
+}
+
+export async function bloombergTerminal() {
+  const [allInvoices, allDeals, allLeads, allTickets, allProjects, allContacts] = await Promise.all([
+    db.select().from(invoicesTable),
+    db.select().from(dealsTable),
+    db.select().from(leadsTable),
+    db.select().from(ticketsTable),
+    db.select().from(projectsTable),
+    db.select().from(contactsTable),
+  ]);
+
+  const paid = allInvoices.filter((i) => i.status === "paid").reduce((s, i) => s + Number(i.amount), 0);
+  const overdue = allInvoices.filter((i) => i.status === "overdue").reduce((s, i) => s + Number(i.amount), 0);
+  const openDeals = allDeals.filter((d) => d.stage !== "closed_won" && d.stage !== "closed_lost");
+  const wonDeals = allDeals.filter((d) => d.stage === "closed_won");
+  const closedDeals = allDeals.filter((d) => d.stage === "closed_won" || d.stage === "closed_lost");
+
+  const terminal = {
+    REV: paid,
+    ODUE: overdue,
+    PIPE: openDeals.reduce((s, d) => s + Number(d.value), 0),
+    WPIPE: Math.round(openDeals.reduce((s, d) => s + (Number(d.value) * d.probability) / 100, 0)),
+    WINR: closedDeals.length > 0 ? Math.round((wonDeals.length / closedDeals.length) * 100) : 0,
+    NDEALS: allDeals.length,
+    NLEADS: allLeads.length,
+    QUAL_LEADS: allLeads.filter((l) => l.status === "qualified").length,
+    TCKTS_OPEN: allTickets.filter((t) => t.status === "open").length,
+    PROJ_ACTIVE: allProjects.filter((p) => p.status === "active").length,
+    CONTACTS: allContacts.length,
+    ARPU: wonDeals.length > 0 ? Math.round(wonDeals.reduce((s, d) => s + Number(d.value), 0) / wonDeals.length) : 0,
+  };
+
+  const narrative = await completeText(
+    "You are NEXUS AI operating as a Bloomberg Terminal architect. Format a concise terminal-style intelligence summary: lead with the most critical number, then give 3-4 bullet data points with brief interpretation. Keep it tight and analytical, like a Bloomberg function screen. No markdown headers, use ALL-CAPS tickers like a terminal.",
+    JSON.stringify(terminal),
+  );
+
+  return saveInsight({
+    module: "analytics",
+    kind: "bloomberg_terminal",
+    entityId: null,
+    title: `NEXUS Terminal — REV ${paid.toLocaleString()} | WPIPE ${terminal.WPIPE.toLocaleString()} | WINR ${terminal.WINR}%`,
+    content: narrative ?? Object.entries(terminal).map(([k, v]) => `${k}: ${v}`).join(" | "),
+    metadata: terminal,
+  });
+}
+
+export async function multiagentEngineer() {
+  const allAutomations = await db.select().from(automationsTable);
+
+  const active = allAutomations.filter((a) => a.status === "active");
+  const paused = allAutomations.filter((a) => a.status === "paused");
+  const failing = allAutomations.filter((a) => a.runsTotal > 5 && a.runsSuccess / a.runsTotal < 0.85);
+  const neverRun = allAutomations.filter((a) => a.runsTotal === 0);
+  const triggerMap = allAutomations.reduce<Record<string, number>>((acc, a) => {
+    acc[a.trigger] = (acc[a.trigger] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  const fleetReport = {
+    totalAgents: allAutomations.length,
+    activeAgents: active.length,
+    pausedAgents: paused.length,
+    failingAgents: failing.map((a) => ({ name: a.name, successRate: Math.round((a.runsSuccess / a.runsTotal) * 100) })),
+    neverRunAgents: neverRun.map((a) => a.name),
+    triggerDistribution: triggerMap,
+    totalRunsToday: allAutomations.reduce((s, a) => s + a.runsTotal, 0),
+    avgSuccessRate: active.length > 0
+      ? Math.round(active.filter((a) => a.runsTotal > 0).reduce((s, a) => s + (a.runsSuccess / a.runsTotal) * 100, 0) / Math.max(1, active.filter((a) => a.runsTotal > 0).length))
+      : 0,
+  };
+
+  const result = await completeText(
+    "You are NEXUS AI operating as an AI multi-agent systems engineer. Audit this automation fleet. Identify coordination gaps, single points of failure, missing trigger coverage, and underperforming agents. Recommend 2-3 specific architectural improvements. Be technical and actionable. No markdown headers.",
+    JSON.stringify(fleetReport),
+  );
+
+  return saveInsight({
+    module: "automations",
+    kind: "multiagent_engineer",
+    entityId: null,
+    title: `Agent Fleet Audit — ${active.length} active, ${failing.length} failing, ${neverRun.length} idle`,
+    content: result ?? `Fleet: ${fleetReport.totalAgents} agents (${active.length} active, ${paused.length} paused). Avg success rate: ${fleetReport.avgSuccessRate}%.`,
+    metadata: fleetReport,
+  });
+}
+
+export async function fullstackDeveloper() {
+  const allProjects = await db.select().from(projectsTable);
+
+  const active = allProjects.filter((p) => p.status === "active");
+  const completed = allProjects.filter((p) => p.status === "completed");
+  const onHold = allProjects.filter((p) => p.status === "on_hold");
+  const highProgress = active.filter((p) => (p.progress ?? 0) >= 80);
+  const stalled = active.filter((p) => (p.progress ?? 0) < 20);
+  const avgProgress = active.length > 0
+    ? Math.round(active.reduce((s, p) => s + (p.progress ?? 0), 0) / active.length)
+    : 0;
+
+  const devSnapshot = {
+    totalProjects: allProjects.length,
+    active: active.length,
+    completed: completed.length,
+    onHold: onHold.length,
+    avgProgress,
+    nearDone: highProgress.map((p) => ({ name: p.name, progress: p.progress })),
+    stalled: stalled.map((p) => ({ name: p.name, progress: p.progress })),
+    completionRate: allProjects.length > 0 ? Math.round((completed.length / allProjects.length) * 100) : 0,
+  };
+
+  const result = await completeText(
+    "You are NEXUS AI operating as a senior full-stack software developer. Review this project portfolio for delivery risks, blocked work, and scope creep signals. Flag what needs unblocking in the next sprint and suggest one concrete process improvement. No markdown headers.",
+    JSON.stringify(devSnapshot),
+  );
+
+  return saveInsight({
+    module: "projects",
+    kind: "fullstack_developer",
+    entityId: null,
+    title: `Dev Health — ${active.length} active projects, ${avgProgress}% avg progress, ${stalled.length} stalled`,
+    content: result ?? `${active.length} active projects at ${avgProgress}% avg progress. ${highProgress.length} near completion. ${stalled.length} stalled below 20%.`,
+    metadata: devSnapshot,
+  });
+}
+
+export async function financialDataEngineer() {
+  const [allInvoices, allDeals, allContacts, allLeads] = await Promise.all([
+    db.select().from(invoicesTable),
+    db.select().from(dealsTable),
+    db.select().from(contactsTable),
+    db.select().from(leadsTable),
+  ]);
+
+  const zeroAmountInvoices = allInvoices.filter((i) => Number(i.amount) === 0).length;
+  const nullDealValues = allDeals.filter((d) => !d.value || Number(d.value) === 0).length;
+  const nullScoreLeads = allLeads.filter((l) => l.score === null).length;
+  const contactsWithoutEmail = allContacts.filter((c) => !c.email).length;
+  const duplicateStatuses = allInvoices.reduce<Record<string, number>>((acc, i) => {
+    acc[i.status] = (acc[i.status] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  const dataQuality = {
+    totalInvoices: allInvoices.length,
+    zeroAmountInvoices,
+    totalDeals: allDeals.length,
+    nullValueDeals: nullDealValues,
+    totalLeads: allLeads.length,
+    unscoredLeads: nullScoreLeads,
+    totalContacts: allContacts.length,
+    contactsMissingEmail: contactsWithoutEmail,
+    invoiceStatusDistribution: duplicateStatuses,
+    overallQualityScore: Math.round(
+      100 - ((zeroAmountInvoices + nullDealValues + nullScoreLeads + contactsWithoutEmail) /
+        Math.max(1, allInvoices.length + allDeals.length + allLeads.length + allContacts.length)) * 100
+    ),
+  };
+
+  const result = await completeText(
+    "You are NEXUS AI operating as a financial data engineer. Audit this data quality report. Identify the most critical data integrity issues, their likely business impact, and 2-3 remediation steps the team should prioritize. Be specific about what bad data costs. No markdown headers.",
+    JSON.stringify(dataQuality),
+  );
+
+  return saveInsight({
+    module: "finance",
+    kind: "financial_data_engineer",
+    entityId: null,
+    title: `Data Quality Score: ${dataQuality.overallQualityScore}% — ${zeroAmountInvoices + nullDealValues + nullScoreLeads + contactsWithoutEmail} issues found`,
+    content: result ?? `Quality: ${dataQuality.overallQualityScore}%. Issues: ${zeroAmountInvoices} zero-amount invoices, ${nullDealValues} null-value deals, ${nullScoreLeads} unscored leads, ${contactsWithoutEmail} contacts missing email.`,
+    metadata: dataQuality,
+  });
+}
+
+export async function mlScientist() {
+  const [allLeads, allDeals, allContacts] = await Promise.all([
+    db.select().from(leadsTable),
+    db.select().from(dealsTable),
+    db.select().from(contactsTable),
+  ]);
+
+  const leadsBySource = allLeads.reduce<Record<string, { total: number; qualified: number }>>((acc, l) => {
+    const src = l.source ?? "unknown";
+    if (!acc[src]) acc[src] = { total: 0, qualified: 0 };
+    acc[src].total++;
+    if (l.status === "qualified" || (l.score ?? 0) >= 60) acc[src].qualified++;
+    return acc;
+  }, {});
+
+  const dealsByStage = allDeals.reduce<Record<string, number>>((acc, d) => {
+    acc[d.stage] = (acc[d.stage] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  const highValueDeals = allDeals.filter((d) => Number(d.value) >= 50000);
+  const highValueWinRate = highValueDeals.length > 0
+    ? Math.round((highValueDeals.filter((d) => d.stage === "closed_won").length / highValueDeals.length) * 100)
+    : 0;
+
+  const features = {
+    leadConversionBySource: Object.fromEntries(
+      Object.entries(leadsBySource).map(([src, v]) => [src, { conversionRate: v.total > 0 ? Math.round((v.qualified / v.total) * 100) : 0, count: v.total }])
+    ),
+    dealStageDistribution: dealsByStage,
+    highValueDealCount: highValueDeals.length,
+    highValueDealWinRate: highValueWinRate,
+    avgLeadScore: allLeads.filter((l) => l.score !== null).length > 0
+      ? Math.round(allLeads.filter((l) => l.score !== null).reduce((s, l) => s + (l.score ?? 0), 0) / allLeads.filter((l) => l.score !== null).length)
+      : 0,
+    totalContacts: allContacts.length,
+  };
+
+  const result = await completeText(
+    "You are NEXUS AI operating as a machine learning scientist. Analyze these feature distributions and conversion signals. Identify the 2-3 strongest predictive patterns for lead qualification and deal win probability. Suggest what a production ML model should prioritize. Be specific with numbers. No markdown headers.",
+    JSON.stringify(features),
+  );
+
+  return saveInsight({
+    module: "analytics",
+    kind: "ml_scientist",
+    entityId: null,
+    title: `ML Signal Report — Top lead source: ${Object.entries(features.leadConversionBySource).sort((a, b) => b[1].conversionRate - a[1].conversionRate)[0]?.[0] ?? "N/A"}`,
+    content: result ?? `Avg lead score: ${features.avgLeadScore}. High-value deal win rate: ${highValueWinRate}%. ${Object.keys(leadsBySource).length} lead sources analyzed.`,
+    metadata: features,
+  });
+}
+
+export async function blockchainAnalyst() {
+  const allInvoices = await db.select().from(invoicesTable);
+
+  const statusCounts = allInvoices.reduce<Record<string, number>>((acc, i) => {
+    acc[i.status] = (acc[i.status] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  const amounts = allInvoices.map((i) => Number(i.amount));
+  const totalValue = amounts.reduce((s, v) => s + v, 0);
+  const maxAmount = Math.max(...amounts, 0);
+  const minAmount = Math.min(...amounts.filter((a) => a > 0), 0);
+
+  const suspiciousPatterns = {
+    zeroAmounts: allInvoices.filter((i) => Number(i.amount) === 0).length,
+    overdueCount: statusCounts["overdue"] ?? 0,
+    overdueValue: allInvoices.filter((i) => i.status === "overdue").reduce((s, i) => s + Number(i.amount), 0),
+    paidValue: allInvoices.filter((i) => i.status === "paid").reduce((s, i) => s + Number(i.amount), 0),
+    pendingValue: allInvoices.filter((i) => i.status === "pending").reduce((s, i) => s + Number(i.amount), 0),
+    totalInvoices: allInvoices.length,
+    totalValue,
+    maxInvoice: maxAmount,
+    minInvoice: minAmount,
+    statusDistribution: statusCounts,
+    collectionRate: totalValue > 0 ? Math.round((allInvoices.filter((i) => i.status === "paid").reduce((s, i) => s + Number(i.amount), 0) / totalValue) * 100) : 0,
+  };
+
+  const result = await completeText(
+    "You are NEXUS AI operating as a blockchain analyst specializing in financial transaction integrity. Audit these invoice patterns for anomalies: unusual amounts, collection failures, suspicious status distributions, or audit trail gaps. Flag any patterns that suggest fraud risk, accounting errors, or process failures. No markdown headers.",
+    JSON.stringify(suspiciousPatterns),
+  );
+
+  return saveInsight({
+    module: "finance",
+    kind: "blockchain_analyst",
+    entityId: null,
+    title: `Transaction Audit — Collection rate ${suspiciousPatterns.collectionRate}% | ${suspiciousPatterns.overdueValue.toLocaleString()} overdue`,
+    content: result ?? `Collection rate: ${suspiciousPatterns.collectionRate}%. Total invoiced: ${totalValue.toLocaleString()}. Overdue: ${suspiciousPatterns.overdueCount} invoices (${suspiciousPatterns.overdueValue.toLocaleString()}).`,
+    metadata: suspiciousPatterns,
+  });
+}
+
+export async function cybersecurityExpert() {
+  const [allAutomations, allContacts, allLeads] = await Promise.all([
+    db.select().from(automationsTable),
+    db.select().from(contactsTable),
+    db.select().from(leadsTable),
+  ]);
+
+  const failingAutomations = allAutomations.filter((a) => a.runsTotal > 3 && a.runsSuccess / a.runsTotal < 0.7);
+  const highRunAutomations = allAutomations.filter((a) => a.runsTotal > 100);
+  const neverRunButActive = allAutomations.filter((a) => a.status === "active" && a.runsTotal === 0);
+  const recentlyActive = allAutomations.filter((a) => a.lastRunAt && (Date.now() - new Date(a.lastRunAt).getTime()) < 24 * 60 * 60 * 1000);
+
+  const securitySnapshot = {
+    totalAutomations: allAutomations.length,
+    failingAutomations: failingAutomations.map((a) => ({ name: a.name, action: a.action, failRate: Math.round((1 - a.runsSuccess / a.runsTotal) * 100) })),
+    highVolumeAutomations: highRunAutomations.map((a) => ({ name: a.name, runs: a.runsTotal })),
+    activeButNeverRun: neverRunButActive.map((a) => a.name),
+    activeInLast24h: recentlyActive.length,
+    totalContacts: allContacts.length,
+    contactsMissingEmail: allContacts.filter((c) => !c.email).length,
+    totalLeads: allLeads.length,
+    unqualifiedLeadRatio: allLeads.length > 0 ? Math.round((allLeads.filter((l) => l.status === "unqualified").length / allLeads.length) * 100) : 0,
+  };
+
+  const result = await completeText(
+    "You are NEXUS AI operating as a cybersecurity expert. Review this system activity snapshot for security concerns: automation abuse patterns, data integrity risks, access anomalies, and process control failures. Prioritize findings by severity and give 2-3 concrete mitigations. No markdown headers.",
+    JSON.stringify(securitySnapshot),
+  );
+
+  return saveInsight({
+    module: "automations",
+    kind: "cybersecurity_expert",
+    entityId: null,
+    title: `Security Audit — ${failingAutomations.length} high-failure automations, ${neverRunButActive.length} ghost agents`,
+    content: result ?? `${failingAutomations.length} automations failing >30% of runs. ${neverRunButActive.length} active agents never triggered. ${allContacts.filter((c) => !c.email).length} contacts missing email.`,
+    metadata: securitySnapshot,
+  });
+}
+
+export async function uxDesigner() {
+  const [allTickets, allArticles] = await Promise.all([
+    db.select().from(ticketsTable),
+    db.select().from(knowledgeArticlesTable),
+  ]);
+
+  const ticketsByChannel = allTickets.reduce<Record<string, number>>((acc, t) => {
+    acc[t.channel ?? "unknown"] = (acc[t.channel ?? "unknown"] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  const ticketsBySentiment = allTickets.reduce<Record<string, number>>((acc, t) => {
+    const cat = t.priority === "urgent" ? "urgent" : t.priority === "high" ? "high" : "normal";
+    acc[cat] = (acc[cat] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  const topKeywords = allTickets
+    .flatMap((t) => (t.subject ?? "").toLowerCase().split(/\s+/))
+    .filter((w) => w.length > 4)
+    .reduce<Record<string, number>>((acc, w) => { acc[w] = (acc[w] ?? 0) + 1; return acc; }, {});
+  const topPainPoints = Object.entries(topKeywords).sort((a, b) => b[1] - a[1]).slice(0, 10).map(([w]) => w);
+
+  const uxSnapshot = {
+    totalTickets: allTickets.length,
+    openTickets: allTickets.filter((t) => t.status === "open").length,
+    ticketsByChannel,
+    ticketsByPriority: ticketsBySentiment,
+    urgentRate: allTickets.length > 0 ? Math.round((allTickets.filter((t) => t.priority === "urgent").length / allTickets.length) * 100) : 0,
+    topPainPointKeywords: topPainPoints,
+    knowledgeArticles: allArticles.length,
+    publishedArticles: allArticles.filter((a) => a.status === "published").length,
+    helpfulArticles: allArticles.filter((a) => (a.helpful ?? 0) > 0).length,
+  };
+
+  const result = await completeText(
+    "You are NEXUS AI operating as a UI/UX motion designer and experience strategist. Analyze these support signals and knowledge base metrics to identify the top 3 user experience friction points. For each, suggest a specific design or content intervention that would reduce ticket volume or improve self-service. Think in terms of information architecture, onboarding flows, and micro-interaction clarity. No markdown headers.",
+    JSON.stringify(uxSnapshot),
+  );
+
+  return saveInsight({
+    module: "support",
+    kind: "ux_designer",
+    entityId: null,
+    title: `UX Friction Report — ${uxSnapshot.urgentRate}% urgent tickets | ${topPainPoints[0] ?? "N/A"} top keyword`,
+    content: result ?? `${allTickets.filter((t) => t.status === "open").length} open tickets across ${Object.keys(ticketsByChannel).length} channels. Top pain keywords: ${topPainPoints.slice(0, 5).join(", ")}.`,
+    metadata: uxSnapshot,
+  });
+}
+
+export async function cloudArchitect() {
+  const [allAutomations, allProjects, allContacts, allDeals] = await Promise.all([
+    db.select().from(automationsTable),
+    db.select().from(projectsTable),
+    db.select().from(contactsTable),
+    db.select().from(dealsTable),
+  ]);
+
+  const totalRuns = allAutomations.reduce((s, a) => s + a.runsTotal, 0);
+  const activeAutomations = allAutomations.filter((a) => a.status === "active").length;
+  const scheduledAutomations = allAutomations.filter((a) => a.trigger.startsWith("schedule.")).length;
+  const eventDrivenAutomations = allAutomations.filter((a) => !a.trigger.startsWith("schedule.")).length;
+  const avgRunsPerAgent = allAutomations.length > 0 ? Math.round(totalRuns / allAutomations.length) : 0;
+
+  const infraSnapshot = {
+    totalAutomations: allAutomations.length,
+    activeAutomations,
+    scheduledAgents: scheduledAutomations,
+    eventDrivenAgents: eventDrivenAutomations,
+    totalAutomationRuns: totalRuns,
+    avgRunsPerAgent,
+    activeProjects: allProjects.filter((p) => p.status === "active").length,
+    totalContacts: allContacts.length,
+    totalDeals: allDeals.length,
+    dataVolume: allContacts.length + allDeals.length + allProjects.length,
+    highFailureAgents: allAutomations.filter((a) => a.runsTotal > 5 && a.runsSuccess / a.runsTotal < 0.8).length,
+    agentConcurrencyRisk: scheduledAutomations > 5 ? "high" : scheduledAutomations > 3 ? "medium" : "low",
+  };
+
+  const result = await completeText(
+    "You are NEXUS AI operating as a cloud infrastructure architect. Review this system load and automation topology. Assess scalability risks, concurrency bottlenecks (especially for scheduled agents that all fire at once), data growth projections, and resilience gaps. Give 2-3 concrete infrastructure recommendations for the next 90 days. No markdown headers.",
+    JSON.stringify(infraSnapshot),
+  );
+
+  return saveInsight({
+    module: "analytics",
+    kind: "cloud_architect",
+    entityId: null,
+    title: `Infra Report — ${activeAutomations} active agents, ${totalRuns} total runs, concurrency risk: ${infraSnapshot.agentConcurrencyRisk}`,
+    content: result ?? `${activeAutomations} active automations, ${totalRuns} total runs, ${avgRunsPerAgent} avg runs/agent. Concurrency risk: ${infraSnapshot.agentConcurrencyRisk}.`,
+    metadata: infraSnapshot,
+  });
+}
+
 export async function generateNoteInsight(noteId: number) {
   const [note] = await db.select().from(notesTable).where(eq(notesTable.id, noteId));
   if (!note) return null;
