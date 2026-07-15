@@ -27,7 +27,7 @@ router.get("/nexus/status", (_req, res) => {
 router.get("/nexus/experts", (_req, res) => {
   res.json(nexus.EXPERTS.map(e => ({
     id: e.id, name: e.name, icon: e.icon, color: e.color, specialty: e.specialty,
-    category: (e as any).category ?? "Domain Experts",
+    category: e.category,
   })));
 });
 

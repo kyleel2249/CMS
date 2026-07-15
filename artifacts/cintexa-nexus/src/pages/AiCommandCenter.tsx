@@ -493,12 +493,12 @@ function ExpertsPanel({ experts, onAskExpert }: { experts: Expert[]; onAskExpert
   const [result, setResult] = useState<string>("");
   const [loading, setLoading] = useState(false);
 
-  const categories = ["all", ...Array.from(new Set(experts.map((e: any) => e.category).filter(Boolean)))];
+  const categories = ["all", ...Array.from(new Set(experts.map(e => e.category).filter(Boolean)))];
 
   const filtered = experts.filter(e => {
     const matchesSearch = e.name.toLowerCase().includes(search.toLowerCase()) ||
       e.specialty.toLowerCase().includes(search.toLowerCase());
-    const matchesCategory = activeCategory === "all" || (e as any).category === activeCategory;
+    const matchesCategory = activeCategory === "all" || e.category === activeCategory;
     return matchesSearch && matchesCategory;
   });
 
@@ -540,7 +540,7 @@ function ExpertsPanel({ experts, onAskExpert }: { experts: Expert[]; onAskExpert
       <div className="grid grid-cols-2 gap-1.5">
         {filtered.map(e => {
           const IconComp = EXPERT_ICONS[e.id] ?? Bot;
-          const catColor = CATEGORY_COLORS[(e as any).category ?? ""] ?? "";
+          const catColor = CATEGORY_COLORS[e.category ?? ""] ?? "";
           return (
             <button key={e.id} onClick={() => setSelected(sel => sel === e.id ? null : e.id)}
               className={cn("p-2.5 rounded-xl border text-left transition-all",
@@ -550,9 +550,9 @@ function ExpertsPanel({ experts, onAskExpert }: { experts: Expert[]; onAskExpert
                 <span className="font-mono text-[10px] font-semibold truncate leading-tight">{e.name}</span>
               </div>
               <p className="font-mono text-[9px] text-muted-foreground leading-relaxed line-clamp-2">{e.specialty}</p>
-              {(e as any).category && (
+              {e.category && (
                 <Badge variant="outline" className={cn("mt-1.5 text-[8px] font-mono px-1 h-3.5", catColor)}>
-                  {(e as any).category.split(" ")[0]}
+                  {e.category.split(" ")[0]}
                 </Badge>
               )}
             </button>
