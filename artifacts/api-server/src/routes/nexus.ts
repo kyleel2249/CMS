@@ -4,7 +4,7 @@
  * POST /nexus/chat          — multi-expert + web search copilot
  * POST /nexus/generate-image — AI image generation (Pollinations)
  * POST /nexus/generate-document — document/file creation
- * GET  /nexus/experts       — list all 18 expert agents
+ * GET  /nexus/experts       — list all 60+ expert agents (Domain, AI Employees, Platform, Capabilities)
  * GET  /nexus/memory        — retrieve AI memory
  * DELETE /nexus/memory/:id  — forget a memory item
  * GET  /nexus/files         — all generated files/images
@@ -27,6 +27,7 @@ router.get("/nexus/status", (_req, res) => {
 router.get("/nexus/experts", (_req, res) => {
   res.json(nexus.EXPERTS.map(e => ({
     id: e.id, name: e.name, icon: e.icon, color: e.color, specialty: e.specialty,
+    category: (e as any).category ?? "Domain Experts",
   })));
 });
 

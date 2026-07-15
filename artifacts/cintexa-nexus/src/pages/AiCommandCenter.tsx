@@ -8,7 +8,12 @@ import {
   DollarSign, Users, Target, Shield, Code2, Cloud, Palette,
   Map, Activity, Wrench, Smartphone, PenLine, Bot, Eye,
   CheckCircle, Clock, AlertTriangle, Video, File, Wand2, Star,
-  Copy, MemoryStick, Network, CircleDot,
+  Copy, MemoryStick, Network, CircleDot, Crown, Building2,
+  Gem, Rocket, UserCheck, Crosshair, Headphones, Scale, UserSearch,
+  FlaskConical, Monitor, PenSquare, LineChart, Trophy, Calendar,
+  Settings, Shuffle, LayoutDashboard, Clapperboard, Layers,
+  Swords, Lightbulb, Cpu as CpuIcon, FileSearch, Mic, ScanEye,
+  Keyboard, GitMerge, Workflow, Telescope,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,7 +32,7 @@ const API = "/api";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type Expert = { id: string; name: string; icon: string; color: string; specialty: string };
+type Expert = { id: string; name: string; icon: string; color: string; specialty: string; category?: string };
 type ExpertResponse = { expertId: string; name: string; icon: string; response: string };
 type Memory = { id: number; memoryType: string; key: string; value: string; confidence: number; source: string; tags: string[]; createdAt: string };
 type GeneratedFile = { id: number; title: string; fileType: string; mimeType: string; url?: string; content?: string; prompt?: string; createdAt: string };
@@ -50,11 +55,31 @@ type Message = {
 // ── Expert icon map ───────────────────────────────────────────────────────────
 
 const EXPERT_ICONS: Record<string, React.ElementType> = {
+  // Domain Experts
   sales: TrendingUp, marketing: Zap, finance: DollarSign, projects: CheckCircle,
   "software-architect": Code2, "ai-ml": Brain, cto: Wrench, database: Database,
   devops: Cloud, security: Shield, "ux-design": Palette, product: Map,
   bi: BarChart3, automation: Activity, api: Network, qa: CircleDot,
   mobile: Smartphone, "technical-writer": PenLine,
+  // AI Employees
+  "ai-ceo": Crown, "ai-coo": Building2, "ai-cfo": Gem, "ai-cmo": Rocket,
+  "ai-hr": UserCheck, "ai-sales-manager": Crosshair, "ai-customer-support": Headphones,
+  "ai-legal": Scale, "ai-recruiting": UserSearch, "ai-research": FlaskConical,
+  "ai-developer": Monitor, "ai-content": PenSquare, "ai-data-analyst": LineChart,
+  "ai-consultant": Trophy, "ai-meeting-assistant": Calendar,
+  "ai-automation-builder": Settings, "ai-workflow-designer": Shuffle,
+  "ai-bi-manager": LayoutDashboard,
+  // Platform Intelligence
+  "content-creator": Clapperboard, "salesforce-agentforce": Cloud,
+  "microsoft-copilot": Layers, "hubspot-ai": Zap, "zoho-zia": Database,
+  "freddy-ai": Star, "clickup-ai": CheckCircle, "notion-ai": BookOpen,
+  "intercom-fin": MessageSquare, "gohighlevel-ai": TrendingUp,
+  // Capability Agents
+  forecasting: Telescope, "competitive-analysis": Swords, recommendations: Lightbulb,
+  "autonomous-execution": CpuIcon, "document-intelligence": FileSearch,
+  "voice-intelligence": Mic, "vision-analysis": ScanEye,
+  "code-generation": Keyboard, "multi-agent": GitMerge,
+  "memory-reasoning": MemoryStick, "planning-agent": Workflow,
 };
 
 // ── Markdown-lite renderer ────────────────────────────────────────────────────
@@ -104,13 +129,17 @@ function formatInline(text: string) {
 
 const QUICK_PROMPTS = [
   { label: "Pipeline Review", prompt: "Give me a full pipeline health review with actionable recommendations", icon: TrendingUp },
-  { label: "Revenue Forecast", prompt: "Create a detailed Q3/Q4 revenue forecast based on current pipeline and closed deals", icon: DollarSign },
-  { label: "Market Research", prompt: "Search the web for the latest B2B SaaS market trends and competitive landscape in 2025-2026", icon: Globe },
-  { label: "Architecture Review", prompt: "As a principal architect, review our current tech stack and suggest improvements for scalability", icon: Code2 },
-  { label: "Generate Report", prompt: "Generate a comprehensive executive board report covering all business metrics", icon: FileText },
-  { label: "Security Audit", prompt: "Conduct a security audit of our operations and identify top 5 vulnerability areas", icon: Shield },
-  { label: "AI Strategy", prompt: "Design an AI implementation roadmap for our business operations for the next 12 months", icon: Brain },
-  { label: "Growth Plan", prompt: "Create a detailed growth plan targeting 40% ARR increase in the next 2 quarters", icon: Target },
+  { label: "Revenue Forecast", prompt: "Create a detailed Q3/Q4 revenue forecast with scenario modeling (base, bull, bear case)", icon: DollarSign },
+  { label: "Competitive Intel", prompt: "Analyze our competitive landscape versus Salesforce, HubSpot, and other CRM/AI platforms and give me a differentiation strategy", icon: Swords },
+  { label: "AI Strategy", prompt: "Design a comprehensive AI implementation roadmap for our business operations for the next 12 months", icon: Brain },
+  { label: "CEO Briefing", prompt: "As my AI CEO, give me an executive brief on our current business health and the top 3 strategic priorities", icon: Crown },
+  { label: "Automation Map", prompt: "Identify the top 10 manual processes in our business that should be automated and build an execution plan", icon: Settings },
+  { label: "Board Report", prompt: "Generate a comprehensive executive board report covering all business metrics, risks, and strategic recommendations", icon: FileText },
+  { label: "Growth Plan", prompt: "Create a detailed growth plan targeting 40% ARR increase in the next 2 quarters with specific tactics", icon: Rocket },
+  { label: "Market Research", prompt: "Search the web for the latest B2B SaaS market trends and AI-powered CRM competitive landscape in 2026", icon: Globe },
+  { label: "Security Audit", prompt: "Conduct a security audit of our operations and identify top 5 vulnerability areas with remediation steps", icon: Shield },
+  { label: "UX Analysis", prompt: "Analyze our current user experience and recommend improvements to increase conversion and retention", icon: Palette },
+  { label: "HR & Culture", prompt: "As my AI HR Director, assess our team structure and recommend improvements to culture, retention, and hiring", icon: Users },
 ];
 
 // ── Message bubble ────────────────────────────────────────────────────────────
@@ -382,9 +411,14 @@ function ChatPanel({ experts }: { experts: Expert[] }) {
               <Brain className="h-8 w-8 text-primary" />
             </div>
             <h3 className="font-mono font-bold text-lg mb-1">NEXUS AI</h3>
-            <p className="text-muted-foreground font-mono text-xs max-w-sm mx-auto">
-              18 expert sub-agents · Web search · Image & document generation · Continuous learning
+            <p className="text-muted-foreground font-mono text-xs max-w-sm mx-auto mb-2">
+              {experts.length}+ parallel agents · Domain Experts · AI Employees · Platform Intelligence · Capability Agents
             </p>
+            <div className="flex flex-wrap justify-center gap-1 max-w-sm mx-auto">
+              {["Memory", "Reasoning", "Planning", "Forecasting", "Multi-agent", "Code Gen", "Vision", "Voice", "Autonomous"].map(cap => (
+                <span key={cap} className="text-[9px] font-mono px-1.5 py-0.5 rounded-full border border-primary/20 text-primary/60">{cap}</span>
+              ))}
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-2">
             {QUICK_PROMPTS.map(({ label, prompt, icon: Icon }) => (
@@ -440,19 +474,33 @@ function ChatPanel({ experts }: { experts: Expert[] }) {
   );
 }
 
+// ── Category color map ────────────────────────────────────────────────────────
+
+const CATEGORY_COLORS: Record<string, string> = {
+  "Domain Experts":       "border-blue-500/40 text-blue-400",
+  "AI Employees":         "border-emerald-500/40 text-emerald-400",
+  "Platform Intelligence":"border-orange-500/40 text-orange-400",
+  "Capability Agents":    "border-purple-500/40 text-purple-400",
+};
+
 // ── Experts Panel ─────────────────────────────────────────────────────────────
 
 function ExpertsPanel({ experts, onAskExpert }: { experts: Expert[]; onAskExpert: (id: string) => void }) {
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<string | null>(null);
+  const [activeCategory, setActiveCategory] = useState<string>("all");
   const [query, setQuery] = useState("");
   const [result, setResult] = useState<string>("");
   const [loading, setLoading] = useState(false);
 
-  const filtered = experts.filter(e =>
-    e.name.toLowerCase().includes(search.toLowerCase()) ||
-    e.specialty.toLowerCase().includes(search.toLowerCase())
-  );
+  const categories = ["all", ...Array.from(new Set(experts.map((e: any) => e.category).filter(Boolean)))];
+
+  const filtered = experts.filter(e => {
+    const matchesSearch = e.name.toLowerCase().includes(search.toLowerCase()) ||
+      e.specialty.toLowerCase().includes(search.toLowerCase());
+    const matchesCategory = activeCategory === "all" || (e as any).category === activeCategory;
+    return matchesSearch && matchesCategory;
+  });
 
   const askExpert = async () => {
     if (!selected || !query.trim()) return;
@@ -470,24 +518,43 @@ function ExpertsPanel({ experts, onAskExpert }: { experts: Expert[]; onAskExpert
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-        <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search experts…" className="pl-9 font-mono text-xs h-8" />
+        <Input value={search} onChange={e => setSearch(e.target.value)} placeholder={`Search ${experts.length} agents…`} className="pl-9 font-mono text-xs h-8" />
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+      {/* Category filter pills */}
+      <div className="flex flex-wrap gap-1">
+        {categories.map(cat => (
+          <button key={cat} onClick={() => setActiveCategory(cat)}
+            className={cn("px-2 py-0.5 rounded-full font-mono text-[10px] border transition-all",
+              activeCategory === cat
+                ? "bg-primary text-primary-foreground border-primary"
+                : cn("border-border text-muted-foreground hover:border-primary/40", cat !== "all" && CATEGORY_COLORS[cat]))}>
+            {cat === "all" ? `All (${experts.length})` : cat.replace("Agents", "").replace("Intelligence", "Intel").trim()}
+          </button>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-2 gap-1.5">
         {filtered.map(e => {
           const IconComp = EXPERT_ICONS[e.id] ?? Bot;
+          const catColor = CATEGORY_COLORS[(e as any).category ?? ""] ?? "";
           return (
             <button key={e.id} onClick={() => setSelected(sel => sel === e.id ? null : e.id)}
-              className={cn("p-3 rounded-xl border text-left transition-all",
+              className={cn("p-2.5 rounded-xl border text-left transition-all",
                 selected === e.id ? "border-primary bg-primary/10" : "border-border bg-card hover:border-primary/40 hover:bg-primary/5")}>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-base">{e.icon}</span>
-                <span className="font-mono text-xs font-semibold truncate">{e.name}</span>
+              <div className="flex items-center gap-1.5 mb-1">
+                <span className="text-sm">{e.icon}</span>
+                <span className="font-mono text-[10px] font-semibold truncate leading-tight">{e.name}</span>
               </div>
-              <p className="font-mono text-[10px] text-muted-foreground leading-relaxed line-clamp-2">{e.specialty}</p>
+              <p className="font-mono text-[9px] text-muted-foreground leading-relaxed line-clamp-2">{e.specialty}</p>
+              {(e as any).category && (
+                <Badge variant="outline" className={cn("mt-1.5 text-[8px] font-mono px-1 h-3.5", catColor)}>
+                  {(e as any).category.split(" ")[0]}
+                </Badge>
+              )}
             </button>
           );
         })}
@@ -807,7 +874,7 @@ export default function AiCommandCenter() {
               {status?.enabled && <Badge variant="outline" className="text-[10px] font-mono h-4 px-1.5 border-green-500/40 text-green-400">ONLINE</Badge>}
             </h1>
             <p className="text-muted-foreground font-mono text-xs">
-              {experts.length || 18} expert agents · Web search · Image & document generation · Continuous learning
+              {experts.length || "60"}+ parallel agents · AI Employees · Platform Intel · Capabilities · No restrictions
             </p>
           </div>
         </div>
