@@ -1,2 +1,3 @@
 - [CINTEXA NEXUS agent scheduling](cintexa-nexus-agent-scheduling.md) — no cron lib; use in-process setInterval sweep + automationsTable as the on/off + run-log store for scheduled AI agents.
-- [CINTEXA NEXUS Windows/npm standalone package](cintexa-nexus-standalone-package.md) — manually copied, drifts from lib/db schema; verify by actually running it, not by inspection.
+- [CINTEXA NEXUS Windows/npm standalone package](cintexa-nexus-standalone-package.md) — now regenerated via a build-standalone script from lib/db schema + seed.ts; never hand-edit its generated files.
+- [Re-registering artifacts after import](reimport-artifact-registration.md) — if artifact.toml exists on disk but listArtifacts()/workflows are empty, re-syncing via verifyAndReplaceArtifactToml (unchanged content) re-registers it — no createArtifact/code changes needed.
