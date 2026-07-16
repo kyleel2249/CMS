@@ -16,6 +16,7 @@ export const compressionJobs = pgTable("compression_jobs", {
   analysis:        jsonb("analysis"),
   settings:        jsonb("settings"),
   errorMessage:    text("error_message"),
+  outputPath:      text("output_path"),
   createdAt:       timestamp("created_at").defaultNow().notNull(),
   completedAt:     timestamp("completed_at"),
 });

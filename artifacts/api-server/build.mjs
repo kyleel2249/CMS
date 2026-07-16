@@ -30,6 +30,7 @@ async function buildAll() {
     external: [
       "*.node",
       "sharp",
+      "fluent-ffmpeg",
       "better-sqlite3",
       "sqlite3",
       "canvas",
