@@ -1,6 +1,10 @@
 import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let _resend: Resend | null = null;
+function getResend(): Resend {
+  if (!_resend) _resend = new Resend(process.env.RESEND_API_KEY ?? "placeholder");
+  return _resend;
+}
 
 // Set RESEND_FROM_EMAIL to a verified sender domain address.
 // Defaults to Resend's shared test sender (delivers only to the Resend account owner).
@@ -25,7 +29,7 @@ export async function sendEmail({
 }): Promise<string> {
   if (!emailEnabled()) throw new Error("RESEND_API_KEY not configured");
 
-  const { data, error } = await resend.emails.send({
+  const { data, error } = await getResend().emails.send({
     from: from ?? FROM_EMAIL,
     to,
     subject,

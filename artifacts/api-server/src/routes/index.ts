@@ -26,6 +26,7 @@ import marketplaceRouter from "./marketplace";
 import billingRouter from "./billing";
 import projectDocsRouter from "./project-docs";
 import nexusRouter from "./nexus";
+import compressionRouter from "./compression";
 // Website, Blog, Visuals, Vouchers
 import websiteAnalyticsRouter from "./website-analytics";
 import vouchersRouter from "./vouchers-api";
@@ -66,5 +67,6 @@ router.use(websiteAnalyticsRouter);
 router.use(vouchersRouter);
 router.use(blogRouter);
 router.use(visualsRouter);
+router.use(compressionRouter);
 
 export default router;

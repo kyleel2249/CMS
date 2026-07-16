@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Users, Target, TicketCheck, Megaphone, Receipt, Briefcase,
   Cpu, Search, Bell, Settings, PanelLeftClose, PanelLeftOpen, BarChart2,
   BookOpen, Zap, MessageSquare, Puzzle, Radio, ShieldAlert, Trophy, Mail,
-  Globe, Image, Tag, PenSquare,
+  Globe, Image, Tag, PenSquare, Archive,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
@@ -38,7 +38,8 @@ const navGroups = [
       { href: "/website",   label: "Web Analytics", icon: Globe },
       { href: "/blog",      label: "Blog / CMS",    icon: PenSquare },
       { href: "/vouchers",  label: "Vouchers",      icon: Tag },
-      { href: "/visuals",   label: "AI Visuals",    icon: Image },
+      { href: "/visuals",     label: "AI Visuals",    icon: Image    },
+      { href: "/compression", label: "AI Compress",   icon: Archive  },
     ],
   },
   {

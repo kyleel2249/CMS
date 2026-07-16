@@ -24,3 +24,4 @@ export * from "./ai-memory";
 export * from "./website-analytics";
 export * from "./vouchers";
 export * from "./blog";
+export * from "./compression";

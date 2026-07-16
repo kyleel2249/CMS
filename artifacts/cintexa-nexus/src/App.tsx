@@ -26,6 +26,7 @@ import WebsiteAnalytics from './pages/WebsiteAnalytics';
 import Visuals from './pages/Visuals';
 import Vouchers from './pages/Vouchers';
 import Blog from './pages/Blog';
+import Compression from './pages/Compression';
 import NotFound from './pages/not-found';
 
 const queryClient = new QueryClient({
@@ -62,6 +63,7 @@ function Router() {
         <Route path="/visuals" component={Visuals} />
         <Route path="/vouchers" component={Vouchers} />
         <Route path="/blog" component={Blog} />
+        <Route path="/compression" component={Compression} />
         <Route component={NotFound} />
       </Switch>
     </AppShell>
