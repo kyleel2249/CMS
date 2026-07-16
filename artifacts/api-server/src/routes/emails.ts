@@ -2,6 +2,7 @@ import { Router } from "express";
 import { db, emailThreadsTable, emailMessagesTable, activityTable } from "@workspace/db";
 import { eq, desc, and } from "drizzle-orm";
 import * as ai from "../lib/ai";
+import * as emailService from "../lib/email";
 
 const router = Router();
 
@@ -77,24 +78,46 @@ router.get("/email/threads/:id", async (req, res) => {
   }
 });
 
-// POST /email/threads
+// POST /email/threads — compose a new email
 router.post("/email/threads", async (req, res) => {
   try {
     const { subject, participants, contactId, dealId, body, from } = req.body;
+
+    // Create thread in DB
     const [thread] = await db
       .insert(emailThreadsTable)
       .values({ subject, participants: participants ?? [], contactId, dealId })
       .returning();
+
+    let resendId: string | undefined;
+
     if (body) {
+      // Actually send via Resend
+      if (emailService.emailEnabled()) {
+        try {
+          resendId = await emailService.sendEmail({
+            from: from ?? emailService.FROM_EMAIL,
+            to: participants ?? [],
+            subject,
+            body,
+          });
+          req.log.info({ resendId }, "Email sent via Resend");
+        } catch (sendErr) {
+          req.log.error(sendErr, "Resend delivery failed — message saved locally only");
+        }
+      }
+
       await db.insert(emailMessagesTable).values({
         threadId: thread.id,
-        from: from ?? "me@cintexa.io",
+        from: from ?? emailService.FROM_EMAIL,
         to: participants ?? [],
         body,
         isOutbound: true,
+        metadata: resendId ? { resendId } : null,
       });
     }
-    res.status(201).json(threadToResponse(thread));
+
+    res.status(201).json({ ...threadToResponse(thread), resendId });
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Failed to create thread" });
@@ -117,23 +140,107 @@ router.patch("/email/threads/:id", async (req, res) => {
   }
 });
 
-// POST /email/threads/:id/reply
+// POST /email/threads/:id/reply — send a reply
 router.post("/email/threads/:id/reply", async (req, res) => {
   try {
     const threadId = Number(req.params.id);
     const { from, to, body, cc, isOutbound } = req.body;
+    const outbound = isOutbound ?? true;
+
+    let resendId: string | undefined;
+
+    if (outbound && emailService.emailEnabled()) {
+      // Fetch subject for the reply
+      const [thread] = await db.select().from(emailThreadsTable).where(eq(emailThreadsTable.id, threadId));
+      if (thread) {
+        try {
+          resendId = await emailService.sendEmail({
+            from: from ?? emailService.FROM_EMAIL,
+            to: to ?? thread.participants,
+            subject: `Re: ${thread.subject}`,
+            body,
+          });
+          req.log.info({ resendId, threadId }, "Reply sent via Resend");
+        } catch (sendErr) {
+          req.log.error(sendErr, "Resend delivery failed — reply saved locally only");
+        }
+      }
+    }
+
     const [msg] = await db
       .insert(emailMessagesTable)
-      .values({ threadId, from, to: to ?? [], cc: cc ?? [], body, isOutbound: isOutbound ?? true })
+      .values({
+        threadId,
+        from: from ?? emailService.FROM_EMAIL,
+        to: to ?? [],
+        cc: cc ?? [],
+        body,
+        isOutbound: outbound,
+        metadata: resendId ? { resendId } : null,
+      })
       .returning();
+
     await db
       .update(emailThreadsTable)
       .set({ lastMessageAt: new Date(), isRead: false })
       .where(eq(emailThreadsTable.id, threadId));
+
     res.status(201).json(messageToResponse(msg));
   } catch (err) {
     req.log.error(err);
     res.status(500).json({ error: "Failed to send reply" });
+  }
+});
+
+// POST /email/inbound — Resend inbound webhook (set this URL in Resend dashboard)
+// Resend posts JSON with: from, to, subject, text, html, headers
+router.post("/email/inbound", async (req, res) => {
+  try {
+    const { from, to, subject, text, html } = req.body;
+    if (!from || !subject) return res.status(400).json({ error: "Missing required fields" });
+
+    const toAddresses: string[] = Array.isArray(to) ? to : [to].filter(Boolean);
+    const participants = [from, ...toAddresses];
+
+    // Check if a thread with this subject already exists (naive dedup)
+    const existing = await db
+      .select()
+      .from(emailThreadsTable)
+      .where(eq(emailThreadsTable.subject, subject))
+      .limit(1);
+
+    let threadId: number;
+
+    if (existing.length > 0) {
+      threadId = existing[0].id;
+    } else {
+      const [newThread] = await db
+        .insert(emailThreadsTable)
+        .values({ subject, participants, isRead: false })
+        .returning();
+      threadId = newThread.id;
+    }
+
+    await db.insert(emailMessagesTable).values({
+      threadId,
+      from,
+      to: toAddresses,
+      body: text ?? "",
+      bodyHtml: html ?? null,
+      isOutbound: false,
+      isRead: false,
+    });
+
+    await db
+      .update(emailThreadsTable)
+      .set({ lastMessageAt: new Date(), isRead: false })
+      .where(eq(emailThreadsTable.id, threadId));
+
+    req.log.info({ from, subject, threadId }, "Inbound email received");
+    res.json({ ok: true, threadId });
+  } catch (err) {
+    req.log.error(err);
+    res.status(500).json({ error: "Failed to process inbound email" });
   }
 });
 

@@ -40,6 +40,8 @@ pnpm --filter @workspace/db run push
 | `DATABASE_URL` | Auto-provided by Replit PostgreSQL |
 | `SESSION_SECRET` | Cookie signing secret (set as Replit Secret) |
 | `OPENROUTER_API_KEY` | AI Copilot, deal scoring, anomaly detection (set as Replit Secret) — configured |
+| `RESEND_API_KEY` | Outbound email delivery via Resend (set as Replit Secret) — configured |
+| `RESEND_FROM_EMAIL` | Sender address for outbound emails — set to an address on your verified Resend domain (e.g. `hello@yourdomain.com`). Defaults to `onboarding@resend.dev` which can only deliver to the Resend account owner. |
 
 ## Setup Status (as of 2026-07-15)
 
