@@ -2,22 +2,28 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Mail, Star, StarOff, Tag, Reply, Forward, Pencil, Trash2,
-  Send, Cpu, RefreshCw, Plus, ChevronRight, X, Loader2,
-  Inbox, AlertCircle, CheckCircle2, Clock, Search,
+  Mail, Star, StarOff, Reply, Send, Cpu, Plus,
+  X, Loader2, Inbox, Search, CheckCircle2, Copy, ExternalLink,
+  Settings, ChevronDown, ChevronUp, Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 
 const API = "/api";
+
+type EmailConfig = {
+  connected: boolean;
+  provider: string;
+  fromEmail: string;
+  webhookUrl: string;
+};
 
 type Thread = {
   id: number; subject: string; participants: string[]; lastMessageAt: string;
@@ -35,7 +41,11 @@ const TRIAGE_COLOR: Record<string, string> = {
   low: "bg-muted text-muted-foreground",
 };
 
-function ComposeDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+function copyToClipboard(text: string, label: string) {
+  navigator.clipboard.writeText(text).then(() => toast.success(`${label} copied`));
+}
+
+function ComposeDialog({ open, onClose, fromEmail }: { open: boolean; onClose: () => void; fromEmail: string }) {
   const qc = useQueryClient();
   const [to, setTo] = useState("");
   const [subject, setSubject] = useState("");
@@ -46,15 +56,16 @@ function ComposeDialog({ open, onClose }: { open: boolean; onClose: () => void }
     if (!to || !subject || !body) { toast.error("Fill in all fields"); return; }
     setLoading(true);
     try {
-      await fetch(`${API}/email/threads`, {
+      const res = await fetch(`${API}/email/threads`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ subject, participants: [to], body, from: "me@cintexa.io" }),
+        body: JSON.stringify({ subject, participants: [to], body, from: fromEmail }),
       });
+      if (!res.ok) throw new Error();
       qc.invalidateQueries({ queryKey: ["email-threads"] });
-      toast.success("Email sent");
+      toast.success(`Email sent to ${to}`);
       onClose(); setTo(""); setSubject(""); setBody("");
-    } catch { toast.error("Failed to send"); }
+    } catch { toast.error("Failed to send — check Resend domain setup"); }
     setLoading(false);
   };
 
@@ -63,6 +74,13 @@ function ComposeDialog({ open, onClose }: { open: boolean; onClose: () => void }
       <DialogContent className="max-w-2xl bg-card border-border">
         <DialogHeader><DialogTitle className="font-mono">New Email</DialogTitle></DialogHeader>
         <div className="space-y-3">
+          <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-muted/40 border border-border">
+            <span className="text-xs text-muted-foreground font-mono w-8">From</span>
+            <span className="text-xs font-mono text-foreground">{fromEmail}</span>
+            <Badge variant="outline" className="ml-auto text-xs font-mono gap-1 text-green-400 border-green-500/30 bg-green-500/10">
+              <Zap className="h-2.5 w-2.5" /> Resend
+            </Badge>
+          </div>
           <Input placeholder="To" value={to} onChange={e => setTo(e.target.value)} className="font-mono text-sm" />
           <Input placeholder="Subject" value={subject} onChange={e => setSubject(e.target.value)} className="font-mono text-sm" />
           <Textarea placeholder="Write your message..." value={body} onChange={e => setBody(e.target.value)} rows={8} className="font-mono text-sm resize-none" />
@@ -78,7 +96,7 @@ function ComposeDialog({ open, onClose }: { open: boolean; onClose: () => void }
   );
 }
 
-function ReplyPanel({ thread, onClose }: { thread: Thread; onClose: () => void }) {
+function ReplyPanel({ thread, fromEmail, onClose }: { thread: Thread; fromEmail: string; onClose: () => void }) {
   const qc = useQueryClient();
   const [body, setBody] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
@@ -101,10 +119,11 @@ function ReplyPanel({ thread, onClose }: { thread: Thread; onClose: () => void }
     if (!body.trim()) { toast.error("Write a reply first"); return; }
     setSending(true);
     try {
-      await fetch(`${API}/email/threads/${thread.id}/reply`, {
+      const res = await fetch(`${API}/email/threads/${thread.id}/reply`, {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ from: "me@cintexa.io", to: thread.participants, body, isOutbound: true }),
+        body: JSON.stringify({ from: fromEmail, to: thread.participants.filter(p => p !== fromEmail), body, isOutbound: true }),
       });
+      if (!res.ok) throw new Error();
       qc.invalidateQueries({ queryKey: ["email-thread", thread.id] });
       qc.invalidateQueries({ queryKey: ["email-threads"] });
       toast.success("Reply sent"); setBody(""); onClose();
@@ -115,7 +134,10 @@ function ReplyPanel({ thread, onClose }: { thread: Thread; onClose: () => void }
   return (
     <div className="border border-border rounded-lg p-4 bg-background/50 space-y-3">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-mono text-muted-foreground">Reply to thread</span>
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-mono text-muted-foreground">Reply from</span>
+          <span className="text-xs font-mono text-foreground">{fromEmail}</span>
+        </div>
         <div className="flex gap-2">
           <Button size="sm" variant="outline" onClick={generateDraft} disabled={aiLoading} className="gap-1 text-xs">
             {aiLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Cpu className="h-3 w-3" />} AI Draft
@@ -133,6 +155,58 @@ function ReplyPanel({ thread, onClose }: { thread: Thread; onClose: () => void }
   );
 }
 
+function InboundSetupPanel({ webhookUrl }: { webhookUrl: string }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="border border-border rounded-lg overflow-hidden">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-4 py-3 text-xs font-mono text-muted-foreground hover:text-foreground hover:bg-muted/30 transition-colors"
+      >
+        <div className="flex items-center gap-2">
+          <Settings className="h-3.5 w-3.5" />
+          Inbound email setup (receive emails in Nexus)
+        </div>
+        {open ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+      </button>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="px-4 pb-4 space-y-3 border-t border-border">
+              <p className="text-xs text-muted-foreground font-mono pt-3">
+                To receive emails in Nexus, configure your domain in Resend:
+              </p>
+              <ol className="space-y-2 text-xs font-mono text-muted-foreground list-decimal list-inside">
+                <li>Add an <strong className="text-foreground">MX record</strong> on your domain pointing to <code className="bg-muted px-1 rounded">inbound.resend.com</code></li>
+                <li>
+                  Go to{" "}
+                  <a href="https://resend.com/inbound" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline inline-flex items-center gap-0.5">
+                    resend.com/inbound <ExternalLink className="h-2.5 w-2.5" />
+                  </a>
+                  {" "}and create an inbound route
+                </li>
+                <li>Paste the webhook URL below as the endpoint</li>
+              </ol>
+              <div className="flex items-center gap-2 bg-muted/50 rounded-md px-3 py-2">
+                <code className="text-xs font-mono text-foreground flex-1 break-all">{webhookUrl}</code>
+                <Button size="sm" variant="ghost" className="h-6 w-6 p-0 shrink-0" onClick={() => copyToClipboard(webhookUrl, "Webhook URL")}>
+                  <Copy className="h-3 w-3" />
+                </Button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 export default function Email() {
   const qc = useQueryClient();
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -141,38 +215,63 @@ export default function Email() {
   const [filter, setFilter] = useState<"all" | "unread" | "starred">("all");
   const [search, setSearch] = useState("");
 
+  // Fetch sender config once
+  const { data: config } = useQuery<EmailConfig>({
+    queryKey: ["email-config"],
+    queryFn: () => fetch(`${API}/email/config`).then(r => r.json()),
+    staleTime: 60_000,
+  });
+
+  const fromEmail = config?.fromEmail ?? "info@cintexa.com";
+
+  // Poll every 30 s for new inbound emails
   const { data: threads = [], isLoading } = useQuery<Thread[]>({
     queryKey: ["email-threads", filter],
     queryFn: () => fetch(`${API}/email/threads?${filter === "starred" ? "starred=true" : ""}`).then(r => r.json()),
+    refetchInterval: 30_000,
   });
 
   const { data: threadDetail } = useQuery<{ thread: Thread; messages: Message[] }>({
     queryKey: ["email-thread", selectedId],
     queryFn: () => fetch(`${API}/email/threads/${selectedId}`).then(r => r.json()),
     enabled: !!selectedId,
+    refetchInterval: 15_000,
   });
 
   const triage = useMutation({
     mutationFn: (id: number) => fetch(`${API}/email/threads/${id}/ai-triage`, { method: "POST" }).then(r => r.json()),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["email-threads"] }); qc.invalidateQueries({ queryKey: ["email-thread", selectedId] }); toast.success("AI triage complete"); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["email-threads"] });
+      qc.invalidateQueries({ queryKey: ["email-thread", selectedId] });
+      toast.success("AI triage complete");
+    },
     onError: () => toast.error("Triage failed"),
   });
 
   const toggleStar = useMutation({
     mutationFn: ({ id, starred }: { id: number; starred: boolean }) =>
-      fetch(`${API}/email/threads/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ isStarred: !starred }) }).then(r => r.json()),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["email-threads"] }); qc.invalidateQueries({ queryKey: ["email-thread", selectedId] }); },
+      fetch(`${API}/email/threads/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isStarred: !starred }),
+      }).then(r => r.json()),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["email-threads"] });
+      qc.invalidateQueries({ queryKey: ["email-thread", selectedId] });
+    },
   });
 
   const filtered = threads.filter(t => {
     if (filter === "unread" && t.isRead) return false;
     if (filter === "starred" && !t.isStarred) return false;
-    if (search && !t.subject.toLowerCase().includes(search.toLowerCase())) return false;
+    if (search && !t.subject.toLowerCase().includes(search.toLowerCase()) &&
+        !t.participants.some(p => p.toLowerCase().includes(search.toLowerCase()))) return false;
     return true;
   });
 
   const selected = threadDetail?.thread ?? threads.find(t => t.id === selectedId) ?? null;
   const messages = threadDetail?.messages ?? [];
+  const unread = threads.filter(t => !t.isRead).length;
 
   return (
     <div className="-m-6 h-[calc(100vh-4rem)] flex flex-col">
@@ -181,7 +280,15 @@ export default function Email() {
         <div className="flex items-center gap-3">
           <Mail className="h-5 w-5 text-primary" />
           <h1 className="text-xl font-mono font-semibold">Email</h1>
-          <Badge variant="outline" className="font-mono text-xs">{threads.filter(t => !t.isRead).length} unread</Badge>
+          {unread > 0 && (
+            <Badge variant="outline" className="font-mono text-xs">{unread} unread</Badge>
+          )}
+          {config?.connected && (
+            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-green-500/10 border border-green-500/20">
+              <CheckCircle2 className="h-3 w-3 text-green-400" />
+              <span className="text-xs font-mono text-green-400">{fromEmail}</span>
+            </div>
+          )}
         </div>
         <Button onClick={() => setComposing(true)} size="sm" className="gap-2">
           <Plus className="h-4 w-4" /> Compose
@@ -195,22 +302,38 @@ export default function Email() {
           <div className="p-3 space-y-2 border-b border-border">
             <div className="relative">
               <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
-              <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search..." className="pl-8 h-8 text-xs font-mono" />
+              <Input
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="Search subject or sender…"
+                className="pl-8 h-8 text-xs font-mono"
+              />
             </div>
             <div className="flex gap-1">
               {(["all", "unread", "starred"] as const).map(f => (
-                <button key={f} onClick={() => setFilter(f)} className={cn("px-2 py-1 rounded text-xs font-mono capitalize transition-colors", filter === f ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground")}>
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={cn(
+                    "px-2 py-1 rounded text-xs font-mono capitalize transition-colors",
+                    filter === f ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
                   {f}
                 </button>
               ))}
             </div>
           </div>
+
           <ScrollArea className="flex-1">
             {isLoading ? (
-              <div className="flex items-center justify-center h-32"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+              <div className="flex items-center justify-center h-32">
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+              </div>
             ) : filtered.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
-                <Inbox className="h-8 w-8 mb-2" /><span className="text-xs font-mono">No emails</span>
+                <Inbox className="h-8 w-8 mb-2" />
+                <span className="text-xs font-mono">No emails</span>
               </div>
             ) : (
               <div className="divide-y divide-border">
@@ -220,23 +343,40 @@ export default function Email() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     onClick={() => { setSelectedId(thread.id); setReplying(false); }}
-                    className={cn("w-full text-left p-3 hover:bg-muted/50 transition-colors relative", selectedId === thread.id && "bg-muted", !thread.isRead && "border-l-2 border-l-primary")}
+                    className={cn(
+                      "w-full text-left p-3 hover:bg-muted/50 transition-colors relative",
+                      selectedId === thread.id && "bg-muted",
+                      !thread.isRead && "border-l-2 border-l-primary"
+                    )}
                   >
                     {!thread.isRead && <div className="absolute top-3 left-1 w-1.5 h-1.5 rounded-full bg-primary" />}
                     <div className="flex items-start justify-between gap-2 mb-1">
-                      <span className={cn("text-xs font-mono truncate", !thread.isRead ? "font-semibold text-foreground" : "text-muted-foreground")}>{thread.subject}</span>
+                      <span className={cn(
+                        "text-xs font-mono truncate",
+                        !thread.isRead ? "font-semibold text-foreground" : "text-muted-foreground"
+                      )}>
+                        {thread.subject}
+                      </span>
                       {thread.isStarred && <Star className="h-3 w-3 text-yellow-400 shrink-0 fill-yellow-400" />}
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground truncate">{thread.participants[0] ?? "Unknown"}</span>
-                      <span className="text-xs text-muted-foreground shrink-0">{formatDistanceToNow(new Date(thread.lastMessageAt), { addSuffix: true })}</span>
+                      <span className="text-xs text-muted-foreground truncate">
+                        {thread.participants.find(p => p !== fromEmail) ?? thread.participants[0] ?? "Unknown"}
+                      </span>
+                      <span className="text-xs text-muted-foreground shrink-0">
+                        {formatDistanceToNow(new Date(thread.lastMessageAt), { addSuffix: true })}
+                      </span>
                     </div>
                     {thread.aiTriage && (
-                      <Badge variant="outline" className={cn("mt-1 text-xs font-mono", TRIAGE_COLOR[thread.aiTriage])}>{thread.aiTriage}</Badge>
+                      <Badge variant="outline" className={cn("mt-1 text-xs font-mono", TRIAGE_COLOR[thread.aiTriage])}>
+                        {thread.aiTriage}
+                      </Badge>
                     )}
                     {thread.labels.length > 0 && (
                       <div className="flex gap-1 mt-1 flex-wrap">
-                        {thread.labels.slice(0, 2).map(l => <Badge key={l} variant="secondary" className="text-xs font-mono px-1 h-4">{l}</Badge>)}
+                        {thread.labels.slice(0, 2).map(l => (
+                          <Badge key={l} variant="secondary" className="text-xs font-mono px-1 h-4">{l}</Badge>
+                        ))}
                       </div>
                     )}
                   </motion.button>
@@ -249,9 +389,17 @@ export default function Email() {
         {/* Thread detail */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {!selected ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground">
-              <Mail className="h-12 w-12 mb-3 opacity-30" />
-              <p className="font-mono text-sm">Select an email to read</p>
+            <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground gap-4">
+              <div className="text-center">
+                <Mail className="h-12 w-12 mb-3 opacity-30 mx-auto" />
+                <p className="font-mono text-sm">Select an email to read</p>
+                <p className="font-mono text-xs text-muted-foreground/60 mt-1">Inbox refreshes every 30 s</p>
+              </div>
+              {config?.webhookUrl && (
+                <div className="w-full max-w-md px-6">
+                  <InboundSetupPanel webhookUrl={config.webhookUrl} />
+                </div>
+              )}
             </div>
           ) : (
             <>
@@ -260,17 +408,28 @@ export default function Email() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 min-w-0">
                     <h2 className="text-lg font-mono font-semibold truncate">{selected.subject}</h2>
-                    <p className="text-xs text-muted-foreground font-mono mt-0.5">{selected.participants.join(", ")}</p>
+                    <p className="text-xs text-muted-foreground font-mono mt-0.5">
+                      {selected.participants.join(", ")}
+                    </p>
                     {selected.aiSummary && (
-                      <p className="text-xs text-muted-foreground mt-1 italic border-l-2 border-primary/40 pl-2">{selected.aiSummary}</p>
+                      <p className="text-xs text-muted-foreground mt-1 italic border-l-2 border-primary/40 pl-2">
+                        {selected.aiSummary}
+                      </p>
                     )}
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <Button size="sm" variant="outline" onClick={() => triage.mutate(selected.id)} disabled={triage.isPending} className="gap-1 text-xs">
+                    <Button
+                      size="sm" variant="outline"
+                      onClick={() => triage.mutate(selected.id)}
+                      disabled={triage.isPending}
+                      className="gap-1 text-xs"
+                    >
                       {triage.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Cpu className="h-3 w-3" />} AI Triage
                     </Button>
                     <Button size="sm" variant="ghost" onClick={() => toggleStar.mutate({ id: selected.id, starred: selected.isStarred })}>
-                      {selected.isStarred ? <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" /> : <StarOff className="h-4 w-4" />}
+                      {selected.isStarred
+                        ? <Star className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+                        : <StarOff className="h-4 w-4" />}
                     </Button>
                     <Button size="sm" variant="ghost" onClick={() => setReplying(!replying)}>
                       <Reply className="h-4 w-4" />
@@ -290,29 +449,46 @@ export default function Email() {
                         key={msg.id}
                         initial={{ opacity: 0, y: 4 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className={cn("rounded-lg p-4 border", msg.isOutbound ? "border-primary/20 bg-primary/5 ml-8" : "border-border bg-card mr-8")}
+                        className={cn(
+                          "rounded-lg p-4 border",
+                          msg.isOutbound
+                            ? "border-primary/20 bg-primary/5 ml-8"
+                            : "border-border bg-card mr-8"
+                        )}
                       >
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
-                            <div className={cn("w-6 h-6 rounded-full flex items-center justify-center text-xs font-mono font-bold", msg.isOutbound ? "bg-primary text-primary-foreground" : "bg-muted text-foreground")}>
+                            <div className={cn(
+                              "w-6 h-6 rounded-full flex items-center justify-center text-xs font-mono font-bold",
+                              msg.isOutbound ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
+                            )}>
                               {msg.from.charAt(0).toUpperCase()}
                             </div>
                             <span className="text-xs font-mono font-medium">{msg.from}</span>
-                            {msg.isOutbound && <Badge variant="outline" className="text-xs font-mono px-1 h-4">Sent</Badge>}
+                            {msg.isOutbound && (
+                              <Badge variant="outline" className="text-xs font-mono px-1 h-4 gap-0.5 text-green-400 border-green-500/30">
+                                <Zap className="h-2.5 w-2.5" /> Sent via Resend
+                              </Badge>
+                            )}
+                            {!msg.isOutbound && (
+                              <Badge variant="outline" className="text-xs font-mono px-1 h-4">Received</Badge>
+                            )}
                           </div>
-                          <span className="text-xs text-muted-foreground font-mono">{formatDistanceToNow(new Date(msg.sentAt), { addSuffix: true })}</span>
+                          <span className="text-xs text-muted-foreground font-mono">
+                            {formatDistanceToNow(new Date(msg.sentAt), { addSuffix: true })}
+                          </span>
                         </div>
                         <p className="text-sm font-mono whitespace-pre-wrap leading-relaxed">{msg.body}</p>
                       </motion.div>
                     ))
                   )}
                   {replying && selected && (
-                    <ReplyPanel thread={selected} onClose={() => setReplying(false)} />
+                    <ReplyPanel thread={selected} fromEmail={fromEmail} onClose={() => setReplying(false)} />
                   )}
                 </div>
               </ScrollArea>
 
-              {/* Footer quick actions */}
+              {/* Footer */}
               {!replying && (
                 <div className="px-6 py-3 border-t border-border shrink-0">
                   <Button onClick={() => setReplying(true)} size="sm" variant="outline" className="gap-2 font-mono text-xs">
@@ -325,7 +501,7 @@ export default function Email() {
         </div>
       </div>
 
-      <ComposeDialog open={composing} onClose={() => setComposing(false)} />
+      <ComposeDialog open={composing} onClose={() => setComposing(false)} fromEmail={fromEmail} />
     </div>
   );
 }

@@ -41,6 +41,21 @@ function messageToResponse(m: typeof emailMessagesTable.$inferSelect) {
   };
 }
 
+// GET /email/config — returns sender identity and inbound webhook URL
+router.get("/email/config", (req, res) => {
+  const devDomain = process.env.REPLIT_DEV_DOMAIN;
+  const forwardedHost = req.headers["x-forwarded-host"] as string | undefined;
+  const host = forwardedHost ?? req.headers.host ?? devDomain ?? "localhost";
+  const proto = (req.headers["x-forwarded-proto"] as string | undefined) ?? (devDomain ? "https" : "http");
+  const webhookUrl = `${proto}://${host}/api/email/inbound`;
+  res.json({
+    connected: emailService.emailEnabled(),
+    provider: "resend",
+    fromEmail: emailService.FROM_EMAIL,
+    webhookUrl,
+  });
+});
+
 // GET /email/threads
 router.get("/email/threads", async (req, res) => {
   try {
