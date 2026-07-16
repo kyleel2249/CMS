@@ -159,12 +159,17 @@ function detectRedundancy(buf: Buffer): number {
 type CompressResult = { result: Buffer; algorithm: string; ext: string; mime: string };
 
 async function compressImage(buf: Buffer, type: string, mode: string, quality: number): Promise<CompressResult> {
-  const qualityMap: Record<string, number> = { lossless: 100, balanced: 82, smart: 75, fast: 70, ultra: 60 };
+  const qualityMap: Record<string, number> = { lossless: 100, balanced: 82, smart: 75, fast: 70, ultra: 60, maximum: 40 };
   const q = quality > 0 ? quality : (qualityMap[mode] ?? 80);
   let pipeline = sharp(buf);
   let algorithm = "", ext = "", mime = "";
 
-  if (type === "png") {
+  // Maximum mode → AVIF (best-in-class perceptual compression, up to 98% smaller than raw PNG)
+  if (mode === "maximum") {
+    pipeline = pipeline.avif({ quality: q, effort: 9 });
+    algorithm = `AVIF (quality ${q}, effort 9) — perceptual max compression`;
+    ext = ".avif"; mime = "image/avif";
+  } else if (type === "png") {
     if (mode === "lossless") {
       pipeline = pipeline.png({ compressionLevel: 9, palette: true });
       algorithm = "PNG + palette optimization (lossless)"; ext = ".png"; mime = "image/png";
@@ -200,6 +205,7 @@ async function compressVideo(buf: Buffer, origName: string, mode: string): Promi
     balanced: { codec: "libx264", crf: 28, preset: "medium"    },
     fast:     { codec: "libx264", crf: 30, preset: "ultrafast" },
     ultra:    { codec: "libx265", crf: 28, preset: "medium"    },
+    maximum:  { codec: "libx265", crf: 32, preset: "slow"      },
   };
   const { codec, crf, preset } = modeConfig[mode] ?? modeConfig.balanced;
 
@@ -230,11 +236,12 @@ async function compressAudio(buf: Buffer, origName: string, mode: string): Promi
 
   type AudioConfig = { codec: string; bitrate: string; outExt: string; mime: string; label: string };
   const modeConfig: Record<string, AudioConfig> = {
-    lossless: { codec: "flac",     bitrate: "",      outExt: "flac", mime: "audio/flac",     label: "FLAC (lossless)" },
-    ultra:    { codec: "libopus",  bitrate: "64k",   outExt: "opus", mime: "audio/ogg",      label: "Opus 64k"        },
-    smart:    { codec: "aac",      bitrate: "96k",   outExt: "m4a",  mime: "audio/mp4",      label: "AAC 96k"         },
-    fast:     { codec: "aac",      bitrate: "64k",   outExt: "m4a",  mime: "audio/mp4",      label: "AAC 64k"         },
-    balanced: { codec: "aac",      bitrate: "128k",  outExt: "m4a",  mime: "audio/mp4",      label: "AAC 128k"        },
+    lossless: { codec: "flac",     bitrate: "",      outExt: "flac", mime: "audio/flac",     label: "FLAC (lossless)"     },
+    ultra:    { codec: "libopus",  bitrate: "64k",   outExt: "opus", mime: "audio/ogg",      label: "Opus 64k"            },
+    maximum:  { codec: "libopus",  bitrate: "48k",   outExt: "opus", mime: "audio/ogg",      label: "Opus 48k (maximum)"  },
+    smart:    { codec: "aac",      bitrate: "96k",   outExt: "m4a",  mime: "audio/mp4",      label: "AAC 96k"             },
+    fast:     { codec: "aac",      bitrate: "64k",   outExt: "m4a",  mime: "audio/mp4",      label: "AAC 64k"             },
+    balanced: { codec: "aac",      bitrate: "128k",  outExt: "m4a",  mime: "audio/mp4",      label: "AAC 128k"            },
   };
   const cfg = modeConfig[mode] ?? modeConfig.balanced;
   const tmpOut = path.join(os.tmpdir(), `nxa-out-${Date.now()}.${cfg.outExt}`);
@@ -255,10 +262,10 @@ async function compressAudio(buf: Buffer, origName: string, mode: string): Promi
 
 // ─── General compression (GZIP / Brotli) ─────────────────────────────────────
 async function compressGeneral(buf: Buffer, mode: string): Promise<CompressResult> {
-  const levelMap: Record<string, number> = { fast: 1, balanced: 6, smart: 7, lossless: 9, ultra: 9 };
+  const levelMap: Record<string, number> = { fast: 1, balanced: 6, smart: 7, lossless: 9, ultra: 9, maximum: 9 };
   const level = levelMap[mode] ?? 6;
 
-  if (mode === "ultra" || mode === "smart") {
+  if (mode === "ultra" || mode === "smart" || mode === "maximum") {
     const [br, gz] = await Promise.all([
       brotliCompress(buf, { params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 11 } }).catch(() => null),
       gzip(buf, { level }),

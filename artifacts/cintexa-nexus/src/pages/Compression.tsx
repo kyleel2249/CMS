@@ -1,7 +1,7 @@
 import { useState, useCallback, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-  Archive, Upload, Download, Trash2, Zap, Shield, Cpu, Gauge, Sparkles,
+  Archive, Upload, Download, Trash2, Zap, Shield, Cpu, Gauge, Sparkles, Flame,
   FileText, Image, Film, Music, Code2, Database, ChevronRight, BarChart3,
   Clock, CheckCircle2, XCircle, Loader2, Info, RefreshCw,
 } from "lucide-react";
@@ -16,7 +16,7 @@ import { motion, AnimatePresence } from "framer-motion";
 const API = "/api";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-type CompressionMode = "lossless" | "smart" | "ultra" | "fast" | "balanced";
+type CompressionMode = "lossless" | "smart" | "ultra" | "fast" | "balanced" | "maximum";
 
 type CompressionResult = {
   jobId: number;
@@ -74,11 +74,12 @@ function categoryIcon(cat: string) {
 }
 
 const MODES: { id: CompressionMode; label: string; icon: React.FC<{ className?: string }>; desc: string; color: string }[] = [
-  { id: "lossless", label: "Lossless",  icon: Shield, desc: "Bit-perfect restoration, SHA-256 verified", color: "text-green-400 border-green-500/30 bg-green-500/10" },
-  { id: "smart",    label: "Smart",     icon: Sparkles, desc: "AI-selected pipeline, visually lossless",  color: "text-blue-400 border-blue-500/30 bg-blue-500/10"  },
-  { id: "balanced", label: "Balanced",  icon: Gauge,   desc: "Balance between size, quality and speed",  color: "text-primary border-primary/30 bg-primary/10"      },
-  { id: "fast",     label: "Fast",      icon: Zap,     desc: "Optimized for speed, good compression",    color: "text-yellow-400 border-yellow-500/30 bg-yellow-500/10" },
-  { id: "ultra",    label: "Ultra",     icon: Cpu,     desc: "Maximum compression, all algorithms",      color: "text-purple-400 border-purple-500/30 bg-purple-500/10" },
+  { id: "lossless", label: "Lossless",  icon: Shield,   desc: "Bit-perfect restoration, SHA-256 verified",           color: "text-green-400 border-green-500/30 bg-green-500/10"  },
+  { id: "smart",    label: "Smart",     icon: Sparkles, desc: "AI-selected pipeline, visually lossless",             color: "text-blue-400 border-blue-500/30 bg-blue-500/10"     },
+  { id: "balanced", label: "Balanced",  icon: Gauge,    desc: "Balance between size, quality and speed",             color: "text-primary border-primary/30 bg-primary/10"         },
+  { id: "fast",     label: "Fast",      icon: Zap,      desc: "Optimized for speed, good compression",               color: "text-yellow-400 border-yellow-500/30 bg-yellow-500/10"},
+  { id: "ultra",    label: "Ultra",     icon: Cpu,      desc: "Maximum compression, all algorithms",                 color: "text-purple-400 border-purple-500/30 bg-purple-500/10"},
+  { id: "maximum",  label: "Maximum",   icon: Flame,    desc: "Up to 98% smaller — AVIF · H.265 · Opus · Brotli 11", color: "text-red-400 border-red-500/30 bg-red-500/10"         },
 ];
 
 // ─── Queued file ──────────────────────────────────────────────────────────────
