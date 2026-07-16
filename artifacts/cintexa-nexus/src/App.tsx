@@ -22,6 +22,10 @@ import ActivityStream from './pages/ActivityStream';
 import Anomalies from './pages/Anomalies';
 import Goals from './pages/Goals';
 import Email from './pages/Email';
+import WebsiteAnalytics from './pages/WebsiteAnalytics';
+import Visuals from './pages/Visuals';
+import Vouchers from './pages/Vouchers';
+import Blog from './pages/Blog';
 import NotFound from './pages/not-found';
 
 const queryClient = new QueryClient({
@@ -54,6 +58,10 @@ function Router() {
         <Route path="/goals" component={Goals} />
         <Route path="/ai" component={AiCommandCenter} />
         <Route path="/email" component={Email} />
+        <Route path="/website" component={WebsiteAnalytics} />
+        <Route path="/visuals" component={Visuals} />
+        <Route path="/vouchers" component={Vouchers} />
+        <Route path="/blog" component={Blog} />
         <Route component={NotFound} />
       </Switch>
     </AppShell>

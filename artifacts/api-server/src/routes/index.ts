@@ -26,6 +26,11 @@ import marketplaceRouter from "./marketplace";
 import billingRouter from "./billing";
 import projectDocsRouter from "./project-docs";
 import nexusRouter from "./nexus";
+// Website, Blog, Visuals, Vouchers
+import websiteAnalyticsRouter from "./website-analytics";
+import vouchersRouter from "./vouchers-api";
+import blogRouter from "./blog-api";
+import visualsRouter from "./visuals-api";
 
 const router: IRouter = Router();
 
@@ -56,5 +61,10 @@ router.use(marketplaceRouter);
 router.use(billingRouter);
 router.use(projectDocsRouter);
 router.use(nexusRouter);
+// Website, Blog, Visuals, Vouchers
+router.use(websiteAnalyticsRouter);
+router.use(vouchersRouter);
+router.use(blogRouter);
+router.use(visualsRouter);
 
 export default router;
